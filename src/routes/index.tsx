@@ -377,7 +377,48 @@ function EmptyChart({ text }: { text: string }) {
   );
 }
 
+function MonthSelect({
+  value,
+  onChange,
+  months,
+  currentMonth,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  months: string[];
+  currentMonth: string;
+}) {
+  const options = useMemo(() => {
+    const all = new Set([currentMonth, ...months]);
+    return Array.from(all).sort().reverse();
+  }, [months, currentMonth]);
+
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-[160px] rounded-xl">
+        <SelectValue placeholder="Mês" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">Todos os meses</SelectItem>
+        {options.map((m) => {
+          const [y, month] = m.split("-");
+          const label = new Date(Number(y), Number(month) - 1).toLocaleDateString("pt-BR", {
+            month: "short",
+            year: "numeric",
+          });
+          return (
+            <SelectItem key={m} value={m}>
+              {label.charAt(0).toUpperCase() + label.slice(1)}
+            </SelectItem>
+          );
+        })}
+      </SelectContent>
+    </Select>
+  );
+}
+
 function NewTxDialog({
+
   open,
   setOpen,
   onAdd,
