@@ -131,7 +131,7 @@ function Home() {
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
-        <header className="mb-8 flex items-center justify-between">
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
               <Wallet className="h-5 w-5" />
@@ -141,8 +141,24 @@ function Home() {
               <p className="text-xs text-muted-foreground">Seu controle pessoal</p>
             </div>
           </div>
-          <NewTxDialog open={open} setOpen={setOpen} onAdd={add} />
+          <div className="flex items-center gap-3">
+            <MonthSelect
+              value={selectedMonth}
+              onChange={setSelectedMonth}
+              months={months}
+              currentMonth={currentMonth}
+            />
+            <NewTxDialog open={open} setOpen={setOpen} onAdd={add} />
+          </div>
         </header>
+
+        {/* Period label */}
+        <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <CalendarDays className="h-4 w-4" />
+          <span>Visão: </span>
+          <span className="font-medium text-foreground capitalize">{monthLabel}</span>
+        </div>
+
 
         {/* Stats */}
         <section className="mb-8 grid gap-4 sm:grid-cols-3">
