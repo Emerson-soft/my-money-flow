@@ -66,32 +66,66 @@ function Home() {
   const { txs, add, remove, hydrated } = useTransactions();
   const [open, setOpen] = useState(false);
 
-  const stats = useMemo(() => {
-    const income = txs.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-    const expense = txs.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
-    return { income, expense, balance: income - expense };
+  const months = useMemo(() => {
+    const s = new Set<string>();
+    txs.forEach((t) => {
+      const d = new Date(t.date);
+      s.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    });
+    return Array.from(s).sort().reverse();
   }, [txs]);
+
+  const currentMonth = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  }, []);
+
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+
+  const activeMonth = selectedMonth === "all" && months.length > 0 ? currentMonth : selectedMonth;
+
+  const filtered = useMemo(() => {
+    if (activeMonth === "all") return txs;
+    return txs.filter((t) => {
+      const d = new Date(t.date);
+      const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      return m === activeMonth;
+    });
+  }, [txs, activeMonth]);
+
+  const stats = useMemo(() => {
+    const income = filtered.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+    const expense = filtered.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+    return { income, expense, balance: income - expense };
+  }, [filtered]);
 
   const weekdayData = useMemo(() => {
     const map = WEEKDAYS.map((d) => ({ day: d, valor: 0 }));
-    txs
+    filtered
       .filter((t) => t.type === "expense")
       .forEach((t) => {
         const idx = new Date(t.date).getDay();
         map[idx].valor += t.amount;
       });
     return map;
-  }, [txs]);
+  }, [filtered]);
 
   const categoryData = useMemo(() => {
     const m = new Map<string, number>();
-    txs
+    filtered
       .filter((t) => t.type === "expense")
       .forEach((t) => m.set(t.category, (m.get(t.category) ?? 0) + t.amount));
     return Array.from(m, ([name, value]) => ({ name, value })).sort(
       (a, b) => b.value - a.value,
     );
-  }, [txs]);
+  }, [filtered]);
+
+  const monthLabel = useMemo(() => {
+    if (activeMonth === "all") return "Todos os meses";
+    const [y, m] = activeMonth.split("-");
+    return new Date(Number(y), Number(m) - 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  }, [activeMonth]);
+
 
   return (
     <div className="min-h-screen bg-background">
