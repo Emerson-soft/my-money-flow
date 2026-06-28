@@ -266,19 +266,20 @@ function Home() {
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold">Transações</h2>
             <span className="text-xs text-muted-foreground">
-              {txs.length} {txs.length === 1 ? "registro" : "registros"}
+              {filtered.length} {filtered.length === 1 ? "registro" : "registros"}
             </span>
           </div>
-          {!hydrated ? null : txs.length === 0 ? (
+          {!hydrated ? null : filtered.length === 0 ? (
             <div className="py-12 text-center">
-              <p className="text-sm text-muted-foreground">Nenhuma transação ainda.</p>
+              <p className="text-sm text-muted-foreground">Nenhuma transação para este período.</p>
               <Button className="mt-4" onClick={() => setOpen(true)}>
                 <Plus className="mr-1 h-4 w-4" /> Adicionar primeira
               </Button>
             </div>
           ) : (
             <ul className="divide-y">
-              {txs.map((t) => (
+              {filtered.map((t) => (
+
                 <li key={t.id} className="flex items-center gap-4 py-3">
                   <div
                     className={`flex h-10 w-10 items-center justify-center rounded-xl ${
