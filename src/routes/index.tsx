@@ -8,7 +8,9 @@ import {
   Wallet,
   TrendingUp,
   TrendingDown,
+  CalendarDays,
 } from "lucide-react";
+
 import {
   Bar,
   BarChart,
@@ -64,38 +66,72 @@ function Home() {
   const { txs, add, remove, hydrated } = useTransactions();
   const [open, setOpen] = useState(false);
 
-  const stats = useMemo(() => {
-    const income = txs.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-    const expense = txs.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
-    return { income, expense, balance: income - expense };
+  const months = useMemo(() => {
+    const s = new Set<string>();
+    txs.forEach((t) => {
+      const d = new Date(t.date);
+      s.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    });
+    return Array.from(s).sort().reverse();
   }, [txs]);
+
+  const currentMonth = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  }, []);
+
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
+
+  const activeMonth = selectedMonth === "all" && months.length > 0 ? currentMonth : selectedMonth;
+
+  const filtered = useMemo(() => {
+    if (activeMonth === "all") return txs;
+    return txs.filter((t) => {
+      const d = new Date(t.date);
+      const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      return m === activeMonth;
+    });
+  }, [txs, activeMonth]);
+
+  const stats = useMemo(() => {
+    const income = filtered.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
+    const expense = filtered.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+    return { income, expense, balance: income - expense };
+  }, [filtered]);
 
   const weekdayData = useMemo(() => {
     const map = WEEKDAYS.map((d) => ({ day: d, valor: 0 }));
-    txs
+    filtered
       .filter((t) => t.type === "expense")
       .forEach((t) => {
         const idx = new Date(t.date).getDay();
         map[idx].valor += t.amount;
       });
     return map;
-  }, [txs]);
+  }, [filtered]);
 
   const categoryData = useMemo(() => {
     const m = new Map<string, number>();
-    txs
+    filtered
       .filter((t) => t.type === "expense")
       .forEach((t) => m.set(t.category, (m.get(t.category) ?? 0) + t.amount));
     return Array.from(m, ([name, value]) => ({ name, value })).sort(
       (a, b) => b.value - a.value,
     );
-  }, [txs]);
+  }, [filtered]);
+
+  const monthLabel = useMemo(() => {
+    if (activeMonth === "all") return "Todos os meses";
+    const [y, m] = activeMonth.split("-");
+    return new Date(Number(y), Number(m) - 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  }, [activeMonth]);
+
 
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
-        <header className="mb-8 flex items-center justify-between">
+        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
               <Wallet className="h-5 w-5" />
@@ -105,8 +141,24 @@ function Home() {
               <p className="text-xs text-muted-foreground">Seu controle pessoal</p>
             </div>
           </div>
-          <NewTxDialog open={open} setOpen={setOpen} onAdd={add} />
+          <div className="flex items-center gap-3">
+            <MonthSelect
+              value={selectedMonth}
+              onChange={setSelectedMonth}
+              months={months}
+              currentMonth={currentMonth}
+            />
+            <NewTxDialog open={open} setOpen={setOpen} onAdd={add} />
+          </div>
         </header>
+
+        {/* Period label */}
+        <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <CalendarDays className="h-4 w-4" />
+          <span>Visão: </span>
+          <span className="font-medium text-foreground capitalize">{monthLabel}</span>
+        </div>
+
 
         {/* Stats */}
         <section className="mb-8 grid gap-4 sm:grid-cols-3">
@@ -214,19 +266,20 @@ function Home() {
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold">Transações</h2>
             <span className="text-xs text-muted-foreground">
-              {txs.length} {txs.length === 1 ? "registro" : "registros"}
+              {filtered.length} {filtered.length === 1 ? "registro" : "registros"}
             </span>
           </div>
-          {!hydrated ? null : txs.length === 0 ? (
+          {!hydrated ? null : filtered.length === 0 ? (
             <div className="py-12 text-center">
-              <p className="text-sm text-muted-foreground">Nenhuma transação ainda.</p>
+              <p className="text-sm text-muted-foreground">Nenhuma transação para este período.</p>
               <Button className="mt-4" onClick={() => setOpen(true)}>
                 <Plus className="mr-1 h-4 w-4" /> Adicionar primeira
               </Button>
             </div>
           ) : (
             <ul className="divide-y">
-              {txs.map((t) => (
+              {filtered.map((t) => (
+
                 <li key={t.id} className="flex items-center gap-4 py-3">
                   <div
                     className={`flex h-10 w-10 items-center justify-center rounded-xl ${
@@ -324,7 +377,48 @@ function EmptyChart({ text }: { text: string }) {
   );
 }
 
+function MonthSelect({
+  value,
+  onChange,
+  months,
+  currentMonth,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  months: string[];
+  currentMonth: string;
+}) {
+  const options = useMemo(() => {
+    const all = new Set([currentMonth, ...months]);
+    return Array.from(all).sort().reverse();
+  }, [months, currentMonth]);
+
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-[160px] rounded-xl">
+        <SelectValue placeholder="Mês" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">Todos os meses</SelectItem>
+        {options.map((m) => {
+          const [y, month] = m.split("-");
+          const label = new Date(Number(y), Number(month) - 1).toLocaleDateString("pt-BR", {
+            month: "short",
+            year: "numeric",
+          });
+          return (
+            <SelectItem key={m} value={m}>
+              {label.charAt(0).toUpperCase() + label.slice(1)}
+            </SelectItem>
+          );
+        })}
+      </SelectContent>
+    </Select>
+  );
+}
+
 function NewTxDialog({
+
   open,
   setOpen,
   onAdd,
