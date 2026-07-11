@@ -153,6 +153,8 @@ function Home() {
           </div>
         </header>
 
+        <NavTabs current="dashboard" />
+
         {/* Period label */}
         <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
           <CalendarDays className="h-4 w-4" />
