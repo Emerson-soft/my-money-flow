@@ -49,6 +49,7 @@ import {
   type TxType,
 } from "@/lib/finance-store";
 import { NavTabs } from "./cartoes";
+import { expandInstallments, useCards } from "@/lib/cards-store";
 
 export const Route = createFileRoute("/")({
   component: Home,
