@@ -66,7 +66,10 @@ const CHART_COLORS = [
 
 function Home() {
   const { txs, add, remove, hydrated } = useTransactions();
+  const { cards, purchases } = useCards();
   const [open, setOpen] = useState(false);
+
+  const installments = useMemo(() => expandInstallments(purchases), [purchases]);
 
   const months = useMemo(() => {
     const s = new Set<string>();
@@ -74,8 +77,9 @@ function Home() {
       const d = new Date(t.date);
       s.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
     });
+    installments.forEach((i) => s.add(i.month));
     return Array.from(s).sort().reverse();
-  }, [txs]);
+  }, [txs, installments]);
 
   const currentMonth = useMemo(() => {
     const now = new Date();
@@ -95,11 +99,22 @@ function Home() {
     });
   }, [txs, activeMonth]);
 
+  const filteredInstallments = useMemo(() => {
+    if (activeMonth === "all") return installments;
+    return installments.filter((i) => i.month === activeMonth);
+  }, [installments, activeMonth]);
+
+  const installmentsExpense = useMemo(
+    () => filteredInstallments.reduce((s, i) => s + i.amount, 0),
+    [filteredInstallments],
+  );
+
   const stats = useMemo(() => {
     const income = filtered.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-    const expense = filtered.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+    const expenseTx = filtered.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+    const expense = expenseTx + installmentsExpense;
     return { income, expense, balance: income - expense };
-  }, [filtered]);
+  }, [filtered, installmentsExpense]);
 
   const weekdayData = useMemo(() => {
     const map = WEEKDAYS.map((d) => ({ day: d, valor: 0 }));
@@ -117,10 +132,55 @@ function Home() {
     filtered
       .filter((t) => t.type === "expense")
       .forEach((t) => m.set(t.category, (m.get(t.category) ?? 0) + t.amount));
+    filteredInstallments.forEach((i) =>
+      m.set(i.category, (m.get(i.category) ?? 0) + i.amount),
+    );
     return Array.from(m, ([name, value]) => ({ name, value })).sort(
       (a, b) => b.value - a.value,
     );
-  }, [filtered]);
+  }, [filtered, filteredInstallments]);
+
+  // Merge real transactions + installments for the list view, sorted by date desc
+  const listItems = useMemo(() => {
+    type Row = {
+      key: string;
+      type: "income" | "expense" | "installment";
+      amount: number;
+      title: string;
+      subtitle: string;
+      dateSort: string; // ISO for sorting
+      color?: string;
+      onRemove?: () => void;
+    };
+    const rows: Row[] = [];
+    filtered.forEach((t) => {
+      rows.push({
+        key: t.id,
+        type: t.type,
+        amount: t.amount,
+        title: t.description || t.category,
+        subtitle: `${t.category} · ${new Date(t.date).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}`,
+        dateSort: t.date,
+        onRemove: () => remove(t.id),
+      });
+    });
+    filteredInstallments.forEach((i, idx) => {
+      const card = cards.find((c) => c.id === i.cardId);
+      const [y, m] = i.month.split("-").map(Number);
+      const iso = new Date(y, m - 1, 1).toISOString();
+      rows.push({
+        key: `${i.purchaseId}-${idx}`,
+        type: "installment",
+        amount: i.amount,
+        title: i.description || i.category,
+        subtitle: `${card?.name ?? "Cartão"} · ${i.category} · parcela ${i.index}/${i.total}`,
+        dateSort: iso,
+        color: card?.color,
+      });
+    });
+    return rows.sort((a, b) => b.dateSort.localeCompare(a.dateSort));
+  }, [filtered, filteredInstallments, cards, remove]);
+
 
   const monthLabel = useMemo(() => {
     if (activeMonth === "all") return "Todos os meses";
