@@ -9,6 +9,7 @@ import {
   TrendingUp,
   TrendingDown,
   CalendarDays,
+  CreditCard as CreditCardIcon,
 } from "lucide-react";
 
 import {
