@@ -9,6 +9,7 @@ import {
   TrendingUp,
   TrendingDown,
   CalendarDays,
+  CreditCard as CreditCardIcon,
 } from "lucide-react";
 
 import {
@@ -49,6 +50,7 @@ import {
   type TxType,
 } from "@/lib/finance-store";
 import { NavTabs } from "./cartoes";
+import { expandInstallments, useCards } from "@/lib/cards-store";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -65,7 +67,10 @@ const CHART_COLORS = [
 
 function Home() {
   const { txs, add, remove, hydrated } = useTransactions();
+  const { cards, purchases } = useCards();
   const [open, setOpen] = useState(false);
+
+  const installments = useMemo(() => expandInstallments(purchases), [purchases]);
 
   const months = useMemo(() => {
     const s = new Set<string>();
@@ -73,8 +78,9 @@ function Home() {
       const d = new Date(t.date);
       s.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
     });
+    installments.forEach((i) => s.add(i.month));
     return Array.from(s).sort().reverse();
-  }, [txs]);
+  }, [txs, installments]);
 
   const currentMonth = useMemo(() => {
     const now = new Date();
@@ -94,11 +100,22 @@ function Home() {
     });
   }, [txs, activeMonth]);
 
+  const filteredInstallments = useMemo(() => {
+    if (activeMonth === "all") return installments;
+    return installments.filter((i) => i.month === activeMonth);
+  }, [installments, activeMonth]);
+
+  const installmentsExpense = useMemo(
+    () => filteredInstallments.reduce((s, i) => s + i.amount, 0),
+    [filteredInstallments],
+  );
+
   const stats = useMemo(() => {
     const income = filtered.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-    const expense = filtered.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+    const expenseTx = filtered.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+    const expense = expenseTx + installmentsExpense;
     return { income, expense, balance: income - expense };
-  }, [filtered]);
+  }, [filtered, installmentsExpense]);
 
   const weekdayData = useMemo(() => {
     const map = WEEKDAYS.map((d) => ({ day: d, valor: 0 }));
@@ -116,10 +133,55 @@ function Home() {
     filtered
       .filter((t) => t.type === "expense")
       .forEach((t) => m.set(t.category, (m.get(t.category) ?? 0) + t.amount));
+    filteredInstallments.forEach((i) =>
+      m.set(i.category, (m.get(i.category) ?? 0) + i.amount),
+    );
     return Array.from(m, ([name, value]) => ({ name, value })).sort(
       (a, b) => b.value - a.value,
     );
-  }, [filtered]);
+  }, [filtered, filteredInstallments]);
+
+  // Merge real transactions + installments for the list view, sorted by date desc
+  const listItems = useMemo(() => {
+    type Row = {
+      key: string;
+      type: "income" | "expense" | "installment";
+      amount: number;
+      title: string;
+      subtitle: string;
+      dateSort: string; // ISO for sorting
+      color?: string;
+      onRemove?: () => void;
+    };
+    const rows: Row[] = [];
+    filtered.forEach((t) => {
+      rows.push({
+        key: t.id,
+        type: t.type,
+        amount: t.amount,
+        title: t.description || t.category,
+        subtitle: `${t.category} · ${new Date(t.date).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}`,
+        dateSort: t.date,
+        onRemove: () => remove(t.id),
+      });
+    });
+    filteredInstallments.forEach((i, idx) => {
+      const card = cards.find((c) => c.id === i.cardId);
+      const [y, m] = i.month.split("-").map(Number);
+      const iso = new Date(y, m - 1, 1).toISOString();
+      rows.push({
+        key: `${i.purchaseId}-${idx}`,
+        type: "installment",
+        amount: i.amount,
+        title: i.description || i.category,
+        subtitle: `${card?.name ?? "Cartão"} · ${i.category} · parcela ${i.index}/${i.total}`,
+        dateSort: iso,
+        color: card?.color,
+      });
+    });
+    return rows.sort((a, b) => b.dateSort.localeCompare(a.dateSort));
+  }, [filtered, filteredInstallments, cards, remove]);
+
 
   const monthLabel = useMemo(() => {
     if (activeMonth === "all") return "Todos os meses";
@@ -269,10 +331,10 @@ function Home() {
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold">Transações</h2>
             <span className="text-xs text-muted-foreground">
-              {filtered.length} {filtered.length === 1 ? "registro" : "registros"}
+              {listItems.length} {listItems.length === 1 ? "registro" : "registros"}
             </span>
           </div>
-          {!hydrated ? null : filtered.length === 0 ? (
+          {!hydrated ? null : listItems.length === 0 ? (
             <div className="py-12 text-center">
               <p className="text-sm text-muted-foreground">Nenhuma transação para este período.</p>
               <Button className="mt-4" onClick={() => setOpen(true)}>
@@ -281,49 +343,54 @@ function Home() {
             </div>
           ) : (
             <ul className="divide-y">
-              {filtered.map((t) => (
-
-                <li key={t.id} className="flex items-center gap-4 py-3">
+              {listItems.map((r) => (
+                <li key={r.key} className="flex items-center gap-4 py-3">
                   <div
                     className={`flex h-10 w-10 items-center justify-center rounded-xl ${
-                      t.type === "income"
+                      r.type === "income"
                         ? "bg-[oklch(0.95_0.05_160)] text-[var(--success)] dark:bg-[oklch(0.3_0.05_160)]"
-                        : "bg-[oklch(0.96_0.04_22)] text-destructive dark:bg-[oklch(0.3_0.06_22)]"
+                        : r.type === "expense"
+                          ? "bg-[oklch(0.96_0.04_22)] text-destructive dark:bg-[oklch(0.3_0.06_22)]"
+                          : "text-white"
                     }`}
+                    style={r.type === "installment" ? { background: r.color ?? "var(--muted)" } : undefined}
                   >
-                    {t.type === "income" ? (
+                    {r.type === "income" ? (
                       <ArrowUpRight className="h-5 w-5" />
-                    ) : (
+                    ) : r.type === "expense" ? (
                       <ArrowDownRight className="h-5 w-5" />
+                    ) : (
+                      <CreditCardIcon className="h-5 w-5" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">
-                      {t.description || t.category}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t.category} · {new Date(t.date).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}
-                    </p>
+                    <p className="truncate text-sm font-medium">{r.title}</p>
+                    <p className="text-xs text-muted-foreground">{r.subtitle}</p>
                   </div>
                   <span
                     className={`text-sm font-semibold tabular-nums ${
-                      t.type === "income" ? "text-[var(--success)]" : "text-destructive"
+                      r.type === "income" ? "text-[var(--success)]" : "text-destructive"
                     }`}
                   >
-                    {t.type === "income" ? "+" : "−"} {brl(t.amount)}
+                    {r.type === "income" ? "+" : "−"} {brl(r.amount)}
                   </span>
-                  <button
-                    onClick={() => remove(t.id)}
-                    className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
-                    aria-label="Remover"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {r.onRemove ? (
+                    <button
+                      onClick={r.onRemove}
+                      className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+                      aria-label="Remover"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <span className="w-8" aria-hidden />
+                  )}
                 </li>
               ))}
             </ul>
           )}
         </section>
+
       </div>
     </div>
   );
