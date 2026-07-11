@@ -48,6 +48,7 @@ import {
   useTransactions,
   type TxType,
 } from "@/lib/finance-store";
+import { NavTabs } from "./cartoes";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -151,6 +152,8 @@ function Home() {
             <NewTxDialog open={open} setOpen={setOpen} onAdd={add} />
           </div>
         </header>
+
+        <NavTabs current="dashboard" />
 
         {/* Period label */}
         <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
