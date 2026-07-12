@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CreditCard as CreditCardIcon,
   Plus,
@@ -7,6 +7,7 @@ import {
   Wallet,
   CalendarDays,
   Layers,
+  Pencil,
 } from "lucide-react";
 import {
   Bar,
@@ -43,6 +44,7 @@ import {
   monthLabel,
   useCards,
   type CreditCard,
+  type Purchase,
 } from "@/lib/cards-store";
 
 export const Route = createFileRoute("/cartoes")({
@@ -57,11 +59,13 @@ function CartoesPage() {
     addCard,
     removeCard,
     addPurchase,
+    updatePurchase,
     removePurchase,
   } = useCards();
 
   const [cardOpen, setCardOpen] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
+  const [editing, setEditing] = useState<Purchase | null>(null);
   const [selectedCard, setSelectedCard] = useState<string>("all");
 
   const installments = useMemo(() => expandInstallments(purchases), [purchases]);
@@ -296,6 +300,13 @@ function CartoesPage() {
                     </div>
                     <span className="text-sm font-semibold tabular-nums">{brl(p.totalAmount)}</span>
                     <button
+                      onClick={() => setEditing(p)}
+                      className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                      aria-label="Editar"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
                       onClick={() => removePurchase(p.id)}
                       className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-destructive"
                       aria-label="Remover"
@@ -308,6 +319,16 @@ function CartoesPage() {
             </ul>
           )}
         </section>
+
+        <EditPurchaseDialog
+          purchase={editing}
+          cards={cards}
+          onClose={() => setEditing(null)}
+          onSave={(patch) => {
+            if (editing) updatePurchase(editing.id, patch);
+            setEditing(null);
+          }}
+        />
 
         {/* Upcoming installments */}
         {upcoming.length > 0 && (
@@ -637,6 +658,155 @@ function NewPurchaseDialog({
 
           <Button type="submit" className="w-full" size="lg">
             Adicionar compra
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditPurchaseDialog({
+  purchase,
+  cards,
+  onClose,
+  onSave,
+}: {
+  purchase: Purchase | null;
+  cards: CreditCard[];
+  onClose: () => void;
+  onSave: (patch: Omit<Purchase, "id">) => void;
+}) {
+  const [cardId, setCardId] = useState("");
+  const [amount, setAmount] = useState("");
+  const [installments, setInstallments] = useState("1");
+  const [category, setCategory] = useState(PURCHASE_CATEGORIES[0]);
+  const [description, setDescription] = useState("");
+  const [firstMonth, setFirstMonth] = useState("");
+
+  useEffect(() => {
+    if (purchase) {
+      setCardId(purchase.cardId);
+      setAmount(String(purchase.totalAmount).replace(".", ","));
+      setInstallments(String(purchase.installments));
+      setCategory(purchase.category);
+      setDescription(purchase.description);
+      setFirstMonth(purchase.firstMonth);
+    }
+  }, [purchase]);
+
+  const total = parseFloat(amount.replace(",", ".")) || 0;
+  const nParcel = Math.max(1, parseInt(installments) || 1);
+  const per = total / nParcel;
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cardId || total <= 0) return;
+    onSave({
+      cardId,
+      description: description.trim(),
+      category,
+      totalAmount: total,
+      installments: nParcel,
+      firstMonth,
+    });
+  };
+
+  return (
+    <Dialog open={!!purchase} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Editar compra</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Cartão</Label>
+            <Select value={cardId} onValueChange={setCardId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {cards.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="etotal">Valor total (R$)</Label>
+              <Input
+                id="etotal"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="einst">Parcelas</Label>
+              <Input
+                id="einst"
+                type="number"
+                min={1}
+                max={60}
+                value={installments}
+                onChange={(e) => setInstallments(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          {total > 0 && (
+            <div className="rounded-xl bg-muted p-3 text-sm">
+              <span className="text-muted-foreground">Ficará </span>
+              <span className="font-semibold">
+                {nParcel}x de {brl(per)}
+              </span>
+              <span className="text-muted-foreground"> a partir de {firstMonth ? monthLabel(firstMonth) : "—"}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PURCHASE_CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="emonth">Mês do gasto</Label>
+              <Input
+                id="emonth"
+                type="month"
+                value={firstMonth}
+                onChange={(e) => setFirstMonth(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edesc">Descrição</Label>
+            <Input
+              id="edesc"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+
+          <Button type="submit" className="w-full" size="lg">
+            Salvar alterações
           </Button>
         </form>
       </DialogContent>

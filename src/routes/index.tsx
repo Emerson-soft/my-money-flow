@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   Trash2,
   Wallet,
@@ -205,11 +207,10 @@ function Home() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <MonthSelect
+            <MonthFilter
               value={selectedMonth}
               onChange={setSelectedMonth}
-              months={months}
-              currentMonth={currentMonth}
+              activeMonth={activeMonth}
             />
             <NewTxDialog open={open} setOpen={setOpen} onAdd={add} />
           </div>
@@ -447,43 +448,69 @@ function EmptyChart({ text }: { text: string }) {
   );
 }
 
-function MonthSelect({
+function MonthFilter({
   value,
   onChange,
-  months,
-  currentMonth,
+  activeMonth,
 }: {
   value: string;
   onChange: (v: string) => void;
-  months: string[];
-  currentMonth: string;
+  activeMonth: string;
 }) {
-  const options = useMemo(() => {
-    const all = new Set([currentMonth, ...months]);
-    return Array.from(all).sort().reverse();
-  }, [months, currentMonth]);
+  const label = useMemo(() => {
+    if (activeMonth === "all") return "—";
+    const [y, m] = activeMonth.split("-");
+    const s = new Date(Number(y), Number(m) - 1).toLocaleDateString("pt-BR", {
+      month: "short",
+      year: "2-digit",
+    });
+    return s.charAt(0).toUpperCase() + s.slice(1).replace(".", "");
+  }, [activeMonth]);
+
+  const shift = (delta: number) => {
+    const base = activeMonth === "all"
+      ? (() => {
+          const d = new Date();
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        })()
+      : activeMonth;
+    const [y, m] = base.split("-").map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    onChange(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+  };
+
+  const showingAll = value === "all";
 
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-[160px] rounded-xl">
-        <SelectValue placeholder="Mês" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">Todos os meses</SelectItem>
-        {options.map((m) => {
-          const [y, month] = m.split("-");
-          const label = new Date(Number(y), Number(month) - 1).toLocaleDateString("pt-BR", {
-            month: "short",
-            year: "numeric",
-          });
-          return (
-            <SelectItem key={m} value={m}>
-              {label.charAt(0).toUpperCase() + label.slice(1)}
-            </SelectItem>
-          );
-        })}
-      </SelectContent>
-    </Select>
+    <div className="inline-flex items-center gap-1 rounded-xl border bg-card p-1 shadow-sm">
+      <button
+        type="button"
+        onClick={() => shift(-1)}
+        className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        aria-label="Mês anterior"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(showingAll ? activeMonth : "all")}
+        className={`min-w-[92px] rounded-lg px-2 py-1 text-sm font-medium transition ${
+          showingAll
+            ? "bg-primary text-primary-foreground"
+            : "hover:bg-muted"
+        }`}
+      >
+        {showingAll ? "Todos" : label}
+      </button>
+      <button
+        type="button"
+        onClick={() => shift(1)}
+        className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        aria-label="Próximo mês"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </div>
   );
 }
 

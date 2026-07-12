@@ -92,6 +92,8 @@ export function useCards() {
 
   const addPurchase = (p: Omit<Purchase, "id">) =>
     setPurchases((prev) => [{ ...p, id: crypto.randomUUID() }, ...prev]);
+  const updatePurchase = (id: string, patch: Partial<Omit<Purchase, "id">>) =>
+    setPurchases((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   const removePurchase = (id: string) =>
     setPurchases((prev) => prev.filter((p) => p.id !== id));
 
@@ -102,6 +104,7 @@ export function useCards() {
     addCard,
     removeCard,
     addPurchase,
+    updatePurchase,
     removePurchase,
   };
 }
