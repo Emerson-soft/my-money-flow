@@ -300,6 +300,13 @@ function CartoesPage() {
                     </div>
                     <span className="text-sm font-semibold tabular-nums">{brl(p.totalAmount)}</span>
                     <button
+                      onClick={() => setEditing(p)}
+                      className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                      aria-label="Editar"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
                       onClick={() => removePurchase(p.id)}
                       className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-destructive"
                       aria-label="Remover"
@@ -312,6 +319,16 @@ function CartoesPage() {
             </ul>
           )}
         </section>
+
+        <EditPurchaseDialog
+          purchase={editing}
+          cards={cards}
+          onClose={() => setEditing(null)}
+          onSave={(patch) => {
+            if (editing) updatePurchase(editing.id, patch);
+            setEditing(null);
+          }}
+        />
 
         {/* Upcoming installments */}
         {upcoming.length > 0 && (
