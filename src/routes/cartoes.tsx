@@ -7,6 +7,7 @@ import {
   Wallet,
   CalendarDays,
   Layers,
+  Pencil,
 } from "lucide-react";
 import {
   Bar,
