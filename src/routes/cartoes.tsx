@@ -44,6 +44,7 @@ import {
   monthLabel,
   useCards,
   type CreditCard,
+  type Purchase,
 } from "@/lib/cards-store";
 
 export const Route = createFileRoute("/cartoes")({
