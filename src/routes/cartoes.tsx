@@ -512,6 +512,7 @@ function NewPurchaseDialog({
     totalAmount: number;
     installments: number;
     firstMonth: string;
+    purchaseDate?: string;
   }) => void;
 }) {
   const nowMonth = useMemo(() => {
@@ -524,6 +525,7 @@ function NewPurchaseDialog({
   const [category, setCategory] = useState(PURCHASE_CATEGORIES[0]);
   const [description, setDescription] = useState("");
   const [firstMonth, setFirstMonth] = useState(nowMonth);
+  const [purchaseDate, setPurchaseDate] = useState("");
 
   const total = parseFloat(amount.replace(",", ".")) || 0;
   const nParcel = Math.max(1, parseInt(installments) || 1);
@@ -539,10 +541,12 @@ function NewPurchaseDialog({
       totalAmount: total,
       installments: nParcel,
       firstMonth,
+      purchaseDate: purchaseDate || undefined,
     });
     setAmount("");
     setDescription("");
     setInstallments("1");
+    setPurchaseDate("");
     setOpen(false);
   };
 
