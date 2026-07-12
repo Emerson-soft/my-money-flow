@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   Trash2,
   Wallet,
