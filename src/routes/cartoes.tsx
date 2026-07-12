@@ -59,11 +59,13 @@ function CartoesPage() {
     addCard,
     removeCard,
     addPurchase,
+    updatePurchase,
     removePurchase,
   } = useCards();
 
   const [cardOpen, setCardOpen] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
+  const [editing, setEditing] = useState<Purchase | null>(null);
   const [selectedCard, setSelectedCard] = useState<string>("all");
 
   const installments = useMemo(() => expandInstallments(purchases), [purchases]);
