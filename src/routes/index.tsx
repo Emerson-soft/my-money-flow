@@ -207,11 +207,10 @@ function Home() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <MonthSelect
+            <MonthFilter
               value={selectedMonth}
               onChange={setSelectedMonth}
-              months={months}
-              currentMonth={currentMonth}
+              activeMonth={activeMonth}
             />
             <NewTxDialog open={open} setOpen={setOpen} onAdd={add} />
           </div>
