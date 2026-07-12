@@ -660,6 +660,19 @@ function NewPurchaseDialog({
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="pdate">Dia da compra (opcional)</Label>
+            <Input
+              id="pdate"
+              type="date"
+              value={purchaseDate}
+              onChange={(e) => setPurchaseDate(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Usado no gráfico de gastos por dia da semana.
+            </p>
+          </div>
+
           <Button type="submit" className="w-full" size="lg">
             Adicionar compra
           </Button>
