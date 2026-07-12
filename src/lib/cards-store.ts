@@ -104,6 +104,7 @@ export function useCards() {
     addCard,
     removeCard,
     addPurchase,
+    updatePurchase,
     removePurchase,
   };
 }
