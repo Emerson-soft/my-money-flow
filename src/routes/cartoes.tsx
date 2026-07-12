@@ -699,6 +699,7 @@ function EditPurchaseDialog({
   const [category, setCategory] = useState(PURCHASE_CATEGORIES[0]);
   const [description, setDescription] = useState("");
   const [firstMonth, setFirstMonth] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState("");
 
   useEffect(() => {
     if (purchase) {
@@ -708,6 +709,7 @@ function EditPurchaseDialog({
       setCategory(purchase.category);
       setDescription(purchase.description);
       setFirstMonth(purchase.firstMonth);
+      setPurchaseDate(purchase.purchaseDate ?? "");
     }
   }, [purchase]);
 
@@ -725,6 +727,7 @@ function EditPurchaseDialog({
       totalAmount: total,
       installments: nParcel,
       firstMonth,
+      purchaseDate: purchaseDate || undefined,
     });
   };
 
