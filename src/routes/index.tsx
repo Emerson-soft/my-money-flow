@@ -127,8 +127,16 @@ function Home() {
         const idx = new Date(t.date).getDay();
         map[idx].valor += t.amount;
       });
+    purchases.forEach((p) => {
+      if (!p.purchaseDate) return;
+      const inMonth = activeMonth === "all" || p.purchaseDate.startsWith(activeMonth);
+      if (!inMonth) return;
+      const [y, m, d] = p.purchaseDate.split("-").map(Number);
+      const idx = new Date(y, m - 1, d).getDay();
+      map[idx].valor += p.totalAmount;
+    });
     return map;
-  }, [filtered]);
+  }, [filtered, purchases, activeMonth]);
 
   const categoryData = useMemo(() => {
     const m = new Map<string, number>();

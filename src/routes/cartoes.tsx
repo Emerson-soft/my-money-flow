@@ -512,6 +512,7 @@ function NewPurchaseDialog({
     totalAmount: number;
     installments: number;
     firstMonth: string;
+    purchaseDate?: string;
   }) => void;
 }) {
   const nowMonth = useMemo(() => {
@@ -524,6 +525,7 @@ function NewPurchaseDialog({
   const [category, setCategory] = useState(PURCHASE_CATEGORIES[0]);
   const [description, setDescription] = useState("");
   const [firstMonth, setFirstMonth] = useState(nowMonth);
+  const [purchaseDate, setPurchaseDate] = useState("");
 
   const total = parseFloat(amount.replace(",", ".")) || 0;
   const nParcel = Math.max(1, parseInt(installments) || 1);
@@ -539,10 +541,12 @@ function NewPurchaseDialog({
       totalAmount: total,
       installments: nParcel,
       firstMonth,
+      purchaseDate: purchaseDate || undefined,
     });
     setAmount("");
     setDescription("");
     setInstallments("1");
+    setPurchaseDate("");
     setOpen(false);
   };
 
@@ -656,6 +660,19 @@ function NewPurchaseDialog({
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="pdate">Dia da compra (opcional)</Label>
+            <Input
+              id="pdate"
+              type="date"
+              value={purchaseDate}
+              onChange={(e) => setPurchaseDate(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Usado no gráfico de gastos por dia da semana.
+            </p>
+          </div>
+
           <Button type="submit" className="w-full" size="lg">
             Adicionar compra
           </Button>
@@ -682,6 +699,7 @@ function EditPurchaseDialog({
   const [category, setCategory] = useState(PURCHASE_CATEGORIES[0]);
   const [description, setDescription] = useState("");
   const [firstMonth, setFirstMonth] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState("");
 
   useEffect(() => {
     if (purchase) {
@@ -691,6 +709,7 @@ function EditPurchaseDialog({
       setCategory(purchase.category);
       setDescription(purchase.description);
       setFirstMonth(purchase.firstMonth);
+      setPurchaseDate(purchase.purchaseDate ?? "");
     }
   }, [purchase]);
 
@@ -708,6 +727,7 @@ function EditPurchaseDialog({
       totalAmount: total,
       installments: nParcel,
       firstMonth,
+      purchaseDate: purchaseDate || undefined,
     });
   };
 
@@ -803,6 +823,19 @@ function EditPurchaseDialog({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edate">Dia da compra (opcional)</Label>
+            <Input
+              id="edate"
+              type="date"
+              value={purchaseDate}
+              onChange={(e) => setPurchaseDate(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Usado no gráfico de gastos por dia da semana.
+            </p>
           </div>
 
           <Button type="submit" className="w-full" size="lg">
