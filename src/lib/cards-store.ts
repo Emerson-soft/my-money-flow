@@ -15,6 +15,7 @@ export interface Purchase {
   totalAmount: number;
   installments: number; // >=1
   firstMonth: string; // "YYYY-MM"
+  purchaseDate?: string; // "YYYY-MM-DD" optional day of purchase
 }
 
 export interface Installment {
