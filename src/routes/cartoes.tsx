@@ -825,6 +825,19 @@ function EditPurchaseDialog({
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="edate">Dia da compra (opcional)</Label>
+            <Input
+              id="edate"
+              type="date"
+              value={purchaseDate}
+              onChange={(e) => setPurchaseDate(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Usado no gráfico de gastos por dia da semana.
+            </p>
+          </div>
+
           <Button type="submit" className="w-full" size="lg">
             Salvar alterações
           </Button>
