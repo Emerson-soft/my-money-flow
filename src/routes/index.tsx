@@ -170,6 +170,7 @@ function Home() {
       dateSort: string; // ISO for sorting
       color?: string;
       onRemove?: () => void;
+      onEdit?: () => void;
     };
     const rows: Row[] = [];
     filtered.forEach((t) => {
@@ -181,6 +182,7 @@ function Home() {
         subtitle: `${t.category} · ${new Date(t.date).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}`,
         dateSort: t.date,
         onRemove: () => remove(t.id),
+        onEdit: () => setEditing(t),
       });
     });
     filteredInstallments.forEach((i, idx) => {
@@ -199,6 +201,7 @@ function Home() {
     });
     return rows.sort((a, b) => b.dateSort.localeCompare(a.dateSort));
   }, [filtered, filteredInstallments, cards, remove]);
+
 
 
   const monthLabel = useMemo(() => {
