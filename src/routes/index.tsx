@@ -231,9 +231,24 @@ function Home() {
               onChange={setSelectedMonth}
               activeMonth={activeMonth}
             />
-            <NewTxDialog open={open} setOpen={setOpen} onAdd={add} />
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-xl"
+              onClick={() => setCatsOpen(true)}
+            >
+              <Tags className="mr-1 h-4 w-4" /> Categorias
+            </Button>
+            <TxDialog
+              open={open}
+              setOpen={setOpen}
+              onSubmit={(t) => add(t)}
+              expenseCats={categories.expense}
+              incomeCats={categories.income}
+            />
           </div>
         </header>
+
 
         <NavTabs current="dashboard" />
 
