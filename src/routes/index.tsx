@@ -12,6 +12,10 @@ import {
   TrendingDown,
   CalendarDays,
   CreditCard as CreditCardIcon,
+  Pencil,
+  Tags,
+  X,
+  Check,
 } from "lucide-react";
 
 import {
@@ -43,14 +47,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  EXPENSE_CATEGORIES,
-  INCOME_CATEGORIES,
   brl,
   useTransactions,
+  type Transaction,
   type TxType,
 } from "@/lib/finance-store";
+import { useCategories, type CatType } from "@/lib/categories-store";
 import { NavTabs } from "./cartoes";
 import { expandInstallments, useCards } from "@/lib/cards-store";
 
@@ -68,9 +72,13 @@ const CHART_COLORS = [
 ];
 
 function Home() {
-  const { txs, add, remove, hydrated } = useTransactions();
+  const { txs, add, update, remove, renameCategory, hydrated } = useTransactions();
   const { cards, purchases } = useCards();
+  const categories = useCategories();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Transaction | null>(null);
+  const [catsOpen, setCatsOpen] = useState(false);
+
 
   const installments = useMemo(() => expandInstallments(purchases), [purchases]);
 
