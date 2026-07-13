@@ -52,9 +52,13 @@ export function useTransactions() {
 
   const add = (t: Omit<Transaction, "id">) =>
     setTxs((p) => [{ ...t, id: crypto.randomUUID() }, ...p]);
+  const update = (id: string, patch: Partial<Omit<Transaction, "id">>) =>
+    setTxs((p) => p.map((t) => (t.id === id ? { ...t, ...patch } : t)));
   const remove = (id: string) => setTxs((p) => p.filter((t) => t.id !== id));
+  const renameCategory = (oldName: string, newName: string) =>
+    setTxs((p) => p.map((t) => (t.category === oldName ? { ...t, category: newName } : t)));
 
-  return { txs, add, remove, hydrated };
+  return { txs, add, update, remove, renameCategory, hydrated };
 }
 
 export const brl = (v: number) =>

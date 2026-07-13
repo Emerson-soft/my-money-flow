@@ -12,6 +12,10 @@ import {
   TrendingDown,
   CalendarDays,
   CreditCard as CreditCardIcon,
+  Pencil,
+  Tags,
+  X,
+  Check,
 } from "lucide-react";
 
 import {
@@ -43,14 +47,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  EXPENSE_CATEGORIES,
-  INCOME_CATEGORIES,
   brl,
   useTransactions,
+  type Transaction,
   type TxType,
 } from "@/lib/finance-store";
+import { useCategories, type CatType } from "@/lib/categories-store";
 import { NavTabs } from "./cartoes";
 import { expandInstallments, useCards } from "@/lib/cards-store";
 
@@ -68,9 +72,13 @@ const CHART_COLORS = [
 ];
 
 function Home() {
-  const { txs, add, remove, hydrated } = useTransactions();
+  const { txs, add, update, remove, renameCategory, hydrated } = useTransactions();
   const { cards, purchases } = useCards();
+  const categories = useCategories();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Transaction | null>(null);
+  const [catsOpen, setCatsOpen] = useState(false);
+
 
   const installments = useMemo(() => expandInstallments(purchases), [purchases]);
 
@@ -162,6 +170,7 @@ function Home() {
       dateSort: string; // ISO for sorting
       color?: string;
       onRemove?: () => void;
+      onEdit?: () => void;
     };
     const rows: Row[] = [];
     filtered.forEach((t) => {
@@ -173,6 +182,7 @@ function Home() {
         subtitle: `${t.category} · ${new Date(t.date).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}`,
         dateSort: t.date,
         onRemove: () => remove(t.id),
+        onEdit: () => setEditing(t),
       });
     });
     filteredInstallments.forEach((i, idx) => {
@@ -191,6 +201,7 @@ function Home() {
     });
     return rows.sort((a, b) => b.dateSort.localeCompare(a.dateSort));
   }, [filtered, filteredInstallments, cards, remove]);
+
 
 
   const monthLabel = useMemo(() => {
@@ -220,9 +231,24 @@ function Home() {
               onChange={setSelectedMonth}
               activeMonth={activeMonth}
             />
-            <NewTxDialog open={open} setOpen={setOpen} onAdd={add} />
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-xl"
+              onClick={() => setCatsOpen(true)}
+            >
+              <Tags className="mr-1 h-4 w-4" /> Categorias
+            </Button>
+            <TxDialog
+              open={open}
+              setOpen={setOpen}
+              onSubmit={(t) => add(t)}
+              expenseCats={categories.expense}
+              incomeCats={categories.income}
+            />
           </div>
         </header>
+
 
         <NavTabs current="dashboard" />
 
@@ -383,27 +409,59 @@ function Home() {
                   >
                     {r.type === "income" ? "+" : "−"} {brl(r.amount)}
                   </span>
-                  {r.onRemove ? (
-                    <button
-                      onClick={r.onRemove}
-                      className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
-                      aria-label="Remover"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  ) : (
-                    <span className="w-8" aria-hidden />
-                  )}
+                  <div className="flex items-center gap-1">
+                    {r.onEdit ? (
+                      <button
+                        onClick={r.onEdit}
+                        className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        aria-label="Editar"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                    {r.onRemove ? (
+                      <button
+                        onClick={r.onRemove}
+                        className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+                        aria-label="Remover"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <span className="w-8" aria-hidden />
+                    )}
+                  </div>
+
                 </li>
               ))}
             </ul>
           )}
         </section>
 
+
       </div>
+
+      <TxDialog
+        open={editing !== null}
+        setOpen={(v) => !v && setEditing(null)}
+        initial={editing}
+        onSubmit={(t) => {
+          if (editing) update(editing.id, t);
+        }}
+        expenseCats={categories.expense}
+        incomeCats={categories.income}
+      />
+
+      <CategoriesDialog
+        open={catsOpen}
+        setOpen={setCatsOpen}
+        categories={categories}
+        onRename={(_type, oldName, newName) => renameCategory(oldName, newName)}
+      />
     </div>
   );
 }
+
 
 function StatCard({
   label,
@@ -522,39 +580,159 @@ function MonthFilter({
   );
 }
 
-function NewTxDialog({
+type TxSubmit = {
+  type: TxType;
+  amount: number;
+  category: string;
+  description: string;
+  date: string;
+};
 
+function TxDialog({
   open,
   setOpen,
-  onAdd,
+  onSubmit,
+  initial,
+  expenseCats,
+  incomeCats,
 }: {
   open: boolean;
   setOpen: (v: boolean) => void;
-  onAdd: (t: { type: TxType; amount: number; category: string; description: string; date: string }) => void;
+  onSubmit: (t: TxSubmit) => void;
+  initial?: Transaction | null;
+  expenseCats: string[];
+  incomeCats: string[];
 }) {
-  const [type, setType] = useState<TxType>("expense");
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const isEdit = !!initial;
+  const [type, setType] = useState<TxType>(initial?.type ?? "expense");
+  const [amount, setAmount] = useState(initial ? String(initial.amount) : "");
+  const [category, setCategory] = useState(
+    initial?.category ?? expenseCats[0] ?? "",
+  );
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [date, setDate] = useState(() =>
+    initial
+      ? new Date(initial.date).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10),
+  );
 
-  const cats = type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  // Sync state when initial changes (edit mode)
+  const initialId = initial?.id;
+  useMemo(() => {
+    if (initial) {
+      setType(initial.type);
+      setAmount(String(initial.amount));
+      setCategory(initial.category);
+      setDescription(initial.description);
+      setDate(new Date(initial.date).toISOString().slice(0, 10));
+    }
+  }, [initialId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const cats = type === "expense" ? expenseCats : incomeCats;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const n = parseFloat(amount.replace(",", "."));
     if (!n || n <= 0) return;
-    onAdd({
+    onSubmit({
       type,
       amount: n,
       category,
       description: description.trim(),
       date: new Date(date + "T12:00:00").toISOString(),
     });
-    setAmount("");
-    setDescription("");
+    if (!isEdit) {
+      setAmount("");
+      setDescription("");
+    }
     setOpen(false);
   };
+
+  const content = (
+    <DialogContent className="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>{isEdit ? "Editar transação" : "Nova transação"}</DialogTitle>
+      </DialogHeader>
+      <form onSubmit={submit} className="space-y-4">
+        <Tabs
+          value={type}
+          onValueChange={(v) => {
+            const t = v as TxType;
+            setType(t);
+            const nextCats = t === "expense" ? expenseCats : incomeCats;
+            if (!nextCats.includes(category)) setCategory(nextCats[0] ?? "");
+          }}
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="expense">Saída</TabsTrigger>
+            <TabsTrigger value="income">Entrada</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <div className="space-y-2">
+          <Label htmlFor="amount">Valor (R$)</Label>
+          <Input
+            id="amount"
+            inputMode="decimal"
+            placeholder="0,00"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            autoFocus
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Categoria</Label>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {cats.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="date">Data</Label>
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="desc">Descrição</Label>
+            <Input
+              id="desc"
+              placeholder="Opcional"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <Button type="submit" className="w-full" size="lg">
+          {isEdit ? "Salvar" : "Adicionar"}
+        </Button>
+      </form>
+    </DialogContent>
+  );
+
+  if (isEdit) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        {content}
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -563,80 +741,160 @@ function NewTxDialog({
           <Plus className="mr-1 h-4 w-4" /> Nova
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      {content}
+    </Dialog>
+  );
+}
+
+function CategoriesDialog({
+  open,
+  setOpen,
+  categories,
+  onRename,
+}: {
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  categories: ReturnType<typeof useCategories>;
+  onRename: (type: CatType, oldName: string, newName: string) => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Nova transação</DialogTitle>
+          <DialogTitle>Gerenciar categorias</DialogTitle>
         </DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
-          <Tabs
-            value={type}
-            onValueChange={(v) => {
-              const t = v as TxType;
-              setType(t);
-              setCategory(t === "expense" ? EXPENSE_CATEGORIES[0] : INCOME_CATEGORIES[0]);
-            }}
-          >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="expense">Saída</TabsTrigger>
-              <TabsTrigger value="income">Entrada</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          <div className="space-y-2">
-            <Label htmlFor="amount">Valor (R$)</Label>
-            <Input
-              id="amount"
-              inputMode="decimal"
-              placeholder="0,00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              autoFocus
-              required
+        <Tabs defaultValue="expense">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="expense">Saídas</TabsTrigger>
+            <TabsTrigger value="income">Entradas</TabsTrigger>
+          </TabsList>
+          <TabsContent value="expense" className="mt-4">
+            <CategoryList
+              items={categories.expense}
+              onAdd={(n) => categories.add("expense", n)}
+              onRename={(o, n) => {
+                categories.rename("expense", o, n);
+                onRename("expense", o, n);
+              }}
+              onRemove={(n) => categories.remove("expense", n)}
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Categoria</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {cats.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="date">Data</Label>
-              <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="desc">Descrição</Label>
-              <Input
-                id="desc"
-                placeholder="Opcional"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <Button type="submit" className="w-full" size="lg">
-            Adicionar
-          </Button>
-        </form>
+          </TabsContent>
+          <TabsContent value="income" className="mt-4">
+            <CategoryList
+              items={categories.income}
+              onAdd={(n) => categories.add("income", n)}
+              onRename={(o, n) => {
+                categories.rename("income", o, n);
+                onRename("income", o, n);
+              }}
+              onRemove={(n) => categories.remove("income", n)}
+            />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
 }
+
+function CategoryList({
+  items,
+  onAdd,
+  onRename,
+  onRemove,
+}: {
+  items: string[];
+  onAdd: (name: string) => void;
+  onRename: (oldName: string, newName: string) => void;
+  onRemove: (name: string) => void;
+}) {
+  const [newName, setNewName] = useState("");
+  const [editingName, setEditingName] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+
+  const submitAdd = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    onAdd(newName);
+    setNewName("");
+  };
+
+  return (
+    <div className="space-y-4">
+      <form onSubmit={submitAdd} className="flex items-center gap-2">
+        <Input
+          placeholder="Nova categoria"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+        />
+        <Button type="submit" size="sm">
+          <Plus className="h-4 w-4" />
+        </Button>
+      </form>
+      <ul className="max-h-72 divide-y overflow-auto rounded-lg border">
+        {items.length === 0 ? (
+          <li className="p-4 text-center text-sm text-muted-foreground">
+            Nenhuma categoria.
+          </li>
+        ) : (
+          items.map((c) => (
+            <li key={c} className="flex items-center gap-2 px-3 py-2">
+              {editingName === c ? (
+                <>
+                  <Input
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    className="h-8"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (draft.trim() && draft !== c) onRename(c, draft.trim());
+                      setEditingName(null);
+                    }}
+                    className="rounded-md p-1.5 text-emerald-600 hover:bg-muted"
+                    aria-label="Salvar"
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingName(null)}
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-muted"
+                    aria-label="Cancelar"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="flex-1 text-sm">{c}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingName(c);
+                      setDraft(c);
+                    }}
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label="Renomear"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRemove(c)}
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive"
+                    aria-label="Remover"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+            </li>
+          ))
+        )}
+      </ul>
+    </div>
+  );
+}
+
