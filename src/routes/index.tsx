@@ -438,10 +438,30 @@ function Home() {
           )}
         </section>
 
+
       </div>
+
+      <TxDialog
+        open={editing !== null}
+        setOpen={(v) => !v && setEditing(null)}
+        initial={editing}
+        onSubmit={(t) => {
+          if (editing) update(editing.id, t);
+        }}
+        expenseCats={categories.expense}
+        incomeCats={categories.income}
+      />
+
+      <CategoriesDialog
+        open={catsOpen}
+        setOpen={setCatsOpen}
+        categories={categories}
+        onRename={(_type, oldName, newName) => renameCategory(oldName, newName)}
+      />
     </div>
   );
 }
+
 
 function StatCard({
   label,
