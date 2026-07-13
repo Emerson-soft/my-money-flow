@@ -409,17 +409,29 @@ function Home() {
                   >
                     {r.type === "income" ? "+" : "−"} {brl(r.amount)}
                   </span>
-                  {r.onRemove ? (
-                    <button
-                      onClick={r.onRemove}
-                      className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
-                      aria-label="Remover"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  ) : (
-                    <span className="w-8" aria-hidden />
-                  )}
+                  <div className="flex items-center gap-1">
+                    {r.onEdit ? (
+                      <button
+                        onClick={r.onEdit}
+                        className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        aria-label="Editar"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    ) : null}
+                    {r.onRemove ? (
+                      <button
+                        onClick={r.onRemove}
+                        className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
+                        aria-label="Remover"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <span className="w-8" aria-hidden />
+                    )}
+                  </div>
+
                 </li>
               ))}
             </ul>
