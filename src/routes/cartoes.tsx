@@ -386,29 +386,31 @@ function shade(hex: string, percent: number) {
   return `#${((1 << 24) + (nr << 16) + (ng << 8) + nb).toString(16).slice(1)}`;
 }
 
-export function NavTabs({ current }: { current: "dashboard" | "cartoes" }) {
+export function NavTabs({
+  current,
+}: {
+  current: "dashboard" | "cartoes" | "orcamento";
+}) {
+  const tabs = [
+    { id: "dashboard" as const, to: "/" as const, label: "Dashboard" },
+    { id: "cartoes" as const, to: "/cartoes" as const, label: "Cartões" },
+    { id: "orcamento" as const, to: "/orcamento" as const, label: "Orçamento" },
+  ];
   return (
     <div className="mb-6 inline-flex rounded-xl border bg-card p-1 shadow-sm">
-      <Link
-        to="/"
-        className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
-          current === "dashboard"
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        Dashboard
-      </Link>
-      <Link
-        to="/cartoes"
-        className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
-          current === "cartoes"
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:text-foreground"
-        }`}
-      >
-        Cartões
-      </Link>
+      {tabs.map((t) => (
+        <Link
+          key={t.id}
+          to={t.to}
+          className={`rounded-lg px-4 py-1.5 text-sm font-medium transition ${
+            current === t.id
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {t.label}
+        </Link>
+      ))}
     </div>
   );
 }
