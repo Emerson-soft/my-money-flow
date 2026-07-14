@@ -642,7 +642,7 @@ function NewPurchaseDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PURCHASE_CATEGORIES.map((c) => (
+                  {categories.map((c: string) => (
                     <SelectItem key={c} value={c}>
                       {c}
                     </SelectItem>
@@ -696,18 +696,20 @@ function NewPurchaseDialog({
 function EditPurchaseDialog({
   purchase,
   cards,
+  categories,
   onClose,
   onSave,
 }: {
   purchase: Purchase | null;
   cards: CreditCard[];
+  categories: string[];
   onClose: () => void;
   onSave: (patch: Omit<Purchase, "id">) => void;
 }) {
   const [cardId, setCardId] = useState("");
   const [amount, setAmount] = useState("");
   const [installments, setInstallments] = useState("1");
-  const [category, setCategory] = useState(PURCHASE_CATEGORIES[0]);
+  const [category, setCategory] = useState(categories[0] ?? "");
   const [description, setDescription] = useState("");
   const [firstMonth, setFirstMonth] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
