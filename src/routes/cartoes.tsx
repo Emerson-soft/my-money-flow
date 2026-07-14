@@ -37,7 +37,6 @@ import {
 } from "@/components/ui/select";
 import {
   CARD_COLORS,
-  PURCHASE_CATEGORIES,
   addMonths,
   brl,
   expandInstallments,
@@ -46,6 +45,7 @@ import {
   type CreditCard,
   type Purchase,
 } from "@/lib/cards-store";
+import { useCategories } from "@/lib/categories-store";
 
 export const Route = createFileRoute("/cartoes")({
   component: CartoesPage,
