@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -412,6 +412,7 @@ function Home() {
                   <div className="flex items-center gap-1">
                     {r.onEdit ? (
                       <button
+                        type="button"
                         onClick={r.onEdit}
                         className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         aria-label="Editar"
@@ -421,6 +422,7 @@ function Home() {
                     ) : null}
                     {r.onRemove ? (
                       <button
+                        type="button"
                         onClick={r.onRemove}
                         className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
                         aria-label="Remover"
@@ -618,7 +620,7 @@ function TxDialog({
 
   // Sync state when initial changes (edit mode)
   const initialId = initial?.id;
-  useMemo(() => {
+  useEffect(() => {
     if (initial) {
       setType(initial.type);
       setAmount(String(initial.amount));
@@ -626,7 +628,8 @@ function TxDialog({
       setDescription(initial.description);
       setDate(new Date(initial.date).toISOString().slice(0, 10));
     }
-  }, [initialId]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialId]);
 
   const cats = type === "expense" ? expenseCats : incomeCats;
 
@@ -649,7 +652,10 @@ function TxDialog({
   };
 
   const content = (
-    <DialogContent className="sm:max-w-md">
+    <DialogContent
+      className="sm:max-w-md"
+      onOpenAutoFocus={isEdit ? (e) => e.preventDefault() : undefined}
+    >
       <DialogHeader>
         <DialogTitle>{isEdit ? "Editar transação" : "Nova transação"}</DialogTitle>
       </DialogHeader>

@@ -37,7 +37,6 @@ import {
 } from "@/components/ui/select";
 import {
   CARD_COLORS,
-  PURCHASE_CATEGORIES,
   addMonths,
   brl,
   expandInstallments,
@@ -46,6 +45,7 @@ import {
   type CreditCard,
   type Purchase,
 } from "@/lib/cards-store";
+import { useCategories } from "@/lib/categories-store";
 
 export const Route = createFileRoute("/cartoes")({
   component: CartoesPage,
@@ -62,6 +62,7 @@ function CartoesPage() {
     updatePurchase,
     removePurchase,
   } = useCards();
+  const { expense: expenseCats } = useCategories();
 
   const [cardOpen, setCardOpen] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
@@ -138,6 +139,7 @@ function CartoesPage() {
               open={buyOpen}
               setOpen={setBuyOpen}
               cards={cards}
+              categories={expenseCats}
               onAdd={addPurchase}
             />
           </div>
@@ -323,6 +325,7 @@ function CartoesPage() {
         <EditPurchaseDialog
           purchase={editing}
           cards={cards}
+          categories={expenseCats}
           onClose={() => setEditing(null)}
           onSave={(patch) => {
             if (editing) updatePurchase(editing.id, patch);
@@ -502,11 +505,13 @@ function NewPurchaseDialog({
   open,
   setOpen,
   cards,
+  categories,
   onAdd,
 }: {
   open: boolean;
   setOpen: (v: boolean) => void;
   cards: CreditCard[];
+  categories: string[];
   onAdd: (p: {
     cardId: string;
     description: string;
@@ -524,10 +529,14 @@ function NewPurchaseDialog({
   const [cardId, setCardId] = useState<string>("");
   const [amount, setAmount] = useState("");
   const [installments, setInstallments] = useState("1");
-  const [category, setCategory] = useState(PURCHASE_CATEGORIES[0]);
+  const [category, setCategory] = useState(categories[0] ?? "");
   const [description, setDescription] = useState("");
   const [firstMonth, setFirstMonth] = useState(nowMonth);
   const [purchaseDate, setPurchaseDate] = useState("");
+
+  useEffect(() => {
+    if (!category && categories[0]) setCategory(categories[0]);
+  }, [categories, category]);
 
   const total = parseFloat(amount.replace(",", ".")) || 0;
   const nParcel = Math.max(1, parseInt(installments) || 1);
@@ -633,7 +642,7 @@ function NewPurchaseDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PURCHASE_CATEGORIES.map((c) => (
+                  {categories.map((c: string) => (
                     <SelectItem key={c} value={c}>
                       {c}
                     </SelectItem>
@@ -687,18 +696,20 @@ function NewPurchaseDialog({
 function EditPurchaseDialog({
   purchase,
   cards,
+  categories,
   onClose,
   onSave,
 }: {
   purchase: Purchase | null;
   cards: CreditCard[];
+  categories: string[];
   onClose: () => void;
   onSave: (patch: Omit<Purchase, "id">) => void;
 }) {
   const [cardId, setCardId] = useState("");
   const [amount, setAmount] = useState("");
   const [installments, setInstallments] = useState("1");
-  const [category, setCategory] = useState(PURCHASE_CATEGORIES[0]);
+  const [category, setCategory] = useState(categories[0] ?? "");
   const [description, setDescription] = useState("");
   const [firstMonth, setFirstMonth] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
@@ -799,7 +810,7 @@ function EditPurchaseDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PURCHASE_CATEGORIES.map((c) => (
+                  {categories.map((c: string) => (
                     <SelectItem key={c} value={c}>
                       {c}
                     </SelectItem>
