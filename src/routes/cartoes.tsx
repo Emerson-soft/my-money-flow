@@ -325,6 +325,7 @@ function CartoesPage() {
         <EditPurchaseDialog
           purchase={editing}
           cards={cards}
+          categories={expenseCats}
           onClose={() => setEditing(null)}
           onSave={(patch) => {
             if (editing) updatePurchase(editing.id, patch);
