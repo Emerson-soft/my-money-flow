@@ -810,7 +810,7 @@ function EditPurchaseDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PURCHASE_CATEGORIES.map((c) => (
+                  {categories.map((c: string) => (
                     <SelectItem key={c} value={c}>
                       {c}
                     </SelectItem>
