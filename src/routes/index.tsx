@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -618,7 +618,7 @@ function TxDialog({
 
   // Sync state when initial changes (edit mode)
   const initialId = initial?.id;
-  useMemo(() => {
+  useEffect(() => {
     if (initial) {
       setType(initial.type);
       setAmount(String(initial.amount));
@@ -626,7 +626,8 @@ function TxDialog({
       setDescription(initial.description);
       setDate(new Date(initial.date).toISOString().slice(0, 10));
     }
-  }, [initialId]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialId]);
 
   const cats = type === "expense" ? expenseCats : incomeCats;
 
