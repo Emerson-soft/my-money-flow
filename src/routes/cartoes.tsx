@@ -139,6 +139,7 @@ function CartoesPage() {
               open={buyOpen}
               setOpen={setBuyOpen}
               cards={cards}
+              categories={expenseCats}
               onAdd={addPurchase}
             />
           </div>
