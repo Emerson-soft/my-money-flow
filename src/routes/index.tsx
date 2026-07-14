@@ -412,6 +412,7 @@ function Home() {
                   <div className="flex items-center gap-1">
                     {r.onEdit ? (
                       <button
+                        type="button"
                         onClick={r.onEdit}
                         className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         aria-label="Editar"
@@ -421,6 +422,7 @@ function Home() {
                     ) : null}
                     {r.onRemove ? (
                       <button
+                        type="button"
                         onClick={r.onRemove}
                         className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive"
                         aria-label="Remover"
@@ -650,7 +652,10 @@ function TxDialog({
   };
 
   const content = (
-    <DialogContent className="sm:max-w-md">
+    <DialogContent
+      className="sm:max-w-md"
+      onOpenAutoFocus={isEdit ? (e) => e.preventDefault() : undefined}
+    >
       <DialogHeader>
         <DialogTitle>{isEdit ? "Editar transação" : "Nova transação"}</DialogTitle>
       </DialogHeader>
