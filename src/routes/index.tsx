@@ -444,6 +444,7 @@ function Home() {
       </div>
 
       <TxDialog
+        mode="edit"
         open={editing !== null}
         setOpen={(v) => !v && setEditing(null)}
         initial={editing}
@@ -597,6 +598,7 @@ function TxDialog({
   initial,
   expenseCats,
   incomeCats,
+  mode = "create",
 }: {
   open: boolean;
   setOpen: (v: boolean) => void;
@@ -604,8 +606,9 @@ function TxDialog({
   initial?: Transaction | null;
   expenseCats: string[];
   incomeCats: string[];
+  mode?: "create" | "edit";
 }) {
-  const isEdit = !!initial;
+  const isEdit = mode === "edit";
   const [type, setType] = useState<TxType>(initial?.type ?? "expense");
   const [amount, setAmount] = useState(initial ? String(initial.amount) : "");
   const [category, setCategory] = useState(
