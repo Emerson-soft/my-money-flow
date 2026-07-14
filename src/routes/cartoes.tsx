@@ -62,6 +62,7 @@ function CartoesPage() {
     updatePurchase,
     removePurchase,
   } = useCards();
+  const { expense: expenseCats } = useCategories();
 
   const [cardOpen, setCardOpen] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
