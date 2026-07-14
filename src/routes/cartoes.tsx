@@ -505,11 +505,13 @@ function NewPurchaseDialog({
   open,
   setOpen,
   cards,
+  categories,
   onAdd,
 }: {
   open: boolean;
   setOpen: (v: boolean) => void;
   cards: CreditCard[];
+  categories: string[];
   onAdd: (p: {
     cardId: string;
     description: string;
@@ -527,10 +529,14 @@ function NewPurchaseDialog({
   const [cardId, setCardId] = useState<string>("");
   const [amount, setAmount] = useState("");
   const [installments, setInstallments] = useState("1");
-  const [category, setCategory] = useState(PURCHASE_CATEGORIES[0]);
+  const [category, setCategory] = useState(categories[0] ?? "");
   const [description, setDescription] = useState("");
   const [firstMonth, setFirstMonth] = useState(nowMonth);
   const [purchaseDate, setPurchaseDate] = useState("");
+
+  useEffect(() => {
+    if (!category && categories[0]) setCategory(categories[0]);
+  }, [categories, category]);
 
   const total = parseFloat(amount.replace(",", ".")) || 0;
   const nParcel = Math.max(1, parseInt(installments) || 1);
