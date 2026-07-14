@@ -3,9 +3,10 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Copy, Target } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { EXPENSE_CATEGORIES, brl, useTransactions } from "@/lib/finance-store";
-import { PURCHASE_CATEGORIES, addMonths, expandInstallments, monthLabel, useCards } from "@/lib/cards-store";
+import { brl, useTransactions } from "@/lib/finance-store";
+import { addMonths, expandInstallments, monthLabel, useCards } from "@/lib/cards-store";
 import { useBudget } from "@/lib/budget-store";
+import { useCategories } from "@/lib/categories-store";
 import { NavTabs } from "./cartoes";
 
 export const Route = createFileRoute("/orcamento")({
@@ -27,18 +28,19 @@ function BudgetPage() {
   const { txs, hydrated: hTx } = useTransactions();
   const { purchases, hydrated: hCards } = useCards();
   const { budget, setPlanned, copyFromMonth, hydrated: hBudget } = useBudget();
+  const { expense: expenseCats } = useCategories();
   const [ym, setYm] = useState(currentYm());
   const hydrated = hTx && hCards && hBudget;
 
   const installments = useMemo(() => expandInstallments(purchases), [purchases]);
 
   const categories = useMemo(() => {
-    const set = new Set<string>([...EXPENSE_CATEGORIES, ...PURCHASE_CATEGORIES]);
+    const set = new Set<string>(expenseCats);
     txs.forEach((t) => t.type === "expense" && set.add(t.category));
     installments.forEach((i) => set.add(i.category));
     Object.values(budget).forEach((m) => Object.keys(m).forEach((c) => set.add(c)));
     return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
-  }, [txs, installments, budget]);
+  }, [expenseCats, txs, installments, budget]);
 
   const usedByCat = useMemo(() => {
     const map: Record<string, number> = {};
