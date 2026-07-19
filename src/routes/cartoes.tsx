@@ -57,6 +57,7 @@ function CartoesPage() {
     purchases,
     hydrated,
     addCard,
+    updateCard,
     removeCard,
     addPurchase,
     updatePurchase,
@@ -67,9 +68,11 @@ function CartoesPage() {
   const [cardOpen, setCardOpen] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
   const [editing, setEditing] = useState<Purchase | null>(null);
+  const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
   const [selectedCard, setSelectedCard] = useState<string>("all");
 
-  const installments = useMemo(() => expandInstallments(purchases), [purchases]);
+  const installments = useMemo(() => expandInstallments(purchases, cards), [purchases, cards]);
+
 
   const currentMonth = useMemo(() => {
     const d = new Date();
@@ -174,14 +177,30 @@ function CartoesPage() {
                       <div>
                         <p className="text-xs opacity-80">Cartão</p>
                         <p className="text-lg font-semibold">{c.name}</p>
+                        {(c.closingDay || c.dueDay) && (
+                          <p className="mt-0.5 text-[11px] opacity-80">
+                            {c.closingDay ? `Fecha dia ${c.closingDay}` : ""}
+                            {c.closingDay && c.dueDay ? " · " : ""}
+                            {c.dueDay ? `Vence dia ${c.dueDay}` : ""}
+                          </p>
+                        )}
                       </div>
-                      <button
-                        onClick={() => removeCard(c.id)}
-                        className="rounded-lg p-1.5 opacity-80 transition hover:bg-white/15 hover:opacity-100"
-                        aria-label="Remover cartão"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setEditingCard(c)}
+                          className="rounded-lg p-1.5 opacity-80 transition hover:bg-white/15 hover:opacity-100"
+                          aria-label="Editar cartão"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => removeCard(c.id)}
+                          className="rounded-lg p-1.5 opacity-80 transition hover:bg-white/15 hover:opacity-100"
+                          aria-label="Remover cartão"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                     <div className="mt-6 flex items-end justify-between">
                       <div>
@@ -195,6 +214,7 @@ function CartoesPage() {
                         </div>
                       ) : null}
                     </div>
+
                   </div>
                 );
               })}
@@ -333,6 +353,15 @@ function CartoesPage() {
           }}
         />
 
+        <EditCardDialog
+          card={editingCard}
+          onClose={() => setEditingCard(null)}
+          onSave={(patch) => {
+            if (editingCard) updateCard(editingCard.id, patch);
+          }}
+        />
+
+
         {/* Upcoming installments */}
         {upcoming.length > 0 && (
           <section className="mt-6 rounded-2xl border bg-card p-6 shadow-sm">
@@ -430,14 +459,26 @@ function NewCardDialog({
   const [name, setName] = useState("");
   const [color, setColor] = useState(CARD_COLORS[0]);
   const [limit, setLimit] = useState("");
+  const [closingDay, setClosingDay] = useState("");
+  const [dueDay, setDueDay] = useState("");
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     const l = parseFloat(limit.replace(",", "."));
-    onAdd({ name: name.trim(), color, limit: isNaN(l) ? undefined : l });
+    const cd = parseInt(closingDay);
+    const dd = parseInt(dueDay);
+    onAdd({
+      name: name.trim(),
+      color,
+      limit: isNaN(l) ? undefined : l,
+      closingDay: isNaN(cd) ? undefined : Math.min(31, Math.max(1, cd)),
+      dueDay: isNaN(dd) ? undefined : Math.min(31, Math.max(1, dd)),
+    });
     setName("");
     setLimit("");
+    setClosingDay("");
+    setDueDay("");
     setColor(CARD_COLORS[0]);
     setOpen(false);
   };
@@ -475,6 +516,35 @@ function NewCardDialog({
               onChange={(e) => setLimit(e.target.value)}
             />
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="cclose">Dia de fechamento</Label>
+              <Input
+                id="cclose"
+                type="number"
+                min={1}
+                max={31}
+                placeholder="Ex.: 15"
+                value={closingDay}
+                onChange={(e) => setClosingDay(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cdue">Dia de vencimento</Label>
+              <Input
+                id="cdue"
+                type="number"
+                min={1}
+                max={31}
+                placeholder="Ex.: 22"
+                value={dueDay}
+                onChange={(e) => setDueDay(e.target.value)}
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Se preenchido, compras após o fechamento entram na fatura do mês seguinte automaticamente.
+          </p>
           <div className="space-y-2">
             <Label>Cor</Label>
             <div className="flex flex-wrap gap-2">
@@ -500,6 +570,126 @@ function NewCardDialog({
     </Dialog>
   );
 }
+
+function EditCardDialog({
+  card,
+  onClose,
+  onSave,
+}: {
+  card: CreditCard | null;
+  onClose: () => void;
+  onSave: (patch: Partial<Omit<CreditCard, "id">>) => void;
+}) {
+  const [name, setName] = useState("");
+  const [color, setColor] = useState(CARD_COLORS[0]);
+  const [limit, setLimit] = useState("");
+  const [closingDay, setClosingDay] = useState("");
+  const [dueDay, setDueDay] = useState("");
+
+  useEffect(() => {
+    if (card) {
+      setName(card.name);
+      setColor(card.color);
+      setLimit(card.limit != null ? String(card.limit).replace(".", ",") : "");
+      setClosingDay(card.closingDay ? String(card.closingDay) : "");
+      setDueDay(card.dueDay ? String(card.dueDay) : "");
+    }
+  }, [card]);
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    const l = parseFloat(limit.replace(",", "."));
+    const cd = parseInt(closingDay);
+    const dd = parseInt(dueDay);
+    onSave({
+      name: name.trim(),
+      color,
+      limit: isNaN(l) ? undefined : l,
+      closingDay: isNaN(cd) ? undefined : Math.min(31, Math.max(1, cd)),
+      dueDay: isNaN(dd) ? undefined : Math.min(31, Math.max(1, dd)),
+    });
+    onClose();
+  };
+
+  return (
+    <Dialog open={!!card} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Editar cartão</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="ecname">Nome</Label>
+            <Input
+              id="ecname"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="eclimit">Limite (opcional)</Label>
+            <Input
+              id="eclimit"
+              inputMode="decimal"
+              value={limit}
+              onChange={(e) => setLimit(e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="eclose">Dia de fechamento</Label>
+              <Input
+                id="eclose"
+                type="number"
+                min={1}
+                max={31}
+                value={closingDay}
+                onChange={(e) => setClosingDay(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ecdue">Dia de vencimento</Label>
+              <Input
+                id="ecdue"
+                type="number"
+                min={1}
+                max={31}
+                value={dueDay}
+                onChange={(e) => setDueDay(e.target.value)}
+              />
+            </div>
+          </div>
+          <p className="-mt-2 text-xs text-muted-foreground">
+            Compras feitas após o dia de fechamento entram na fatura do mês seguinte.
+          </p>
+          <div className="space-y-2">
+            <Label>Cor</Label>
+            <div className="flex flex-wrap gap-2">
+              {CARD_COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className={`h-8 w-8 rounded-full ring-offset-2 transition ${
+                    color === c ? "ring-2 ring-foreground" : ""
+                  }`}
+                  style={{ background: c }}
+                  aria-label={`Cor ${c}`}
+                />
+              ))}
+            </div>
+          </div>
+          <Button type="submit" className="w-full" size="lg">
+            Salvar alterações
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 function NewPurchaseDialog({
   open,

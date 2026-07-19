@@ -5,7 +5,10 @@ export interface CreditCard {
   name: string;
   color: string; // hex or css color
   limit?: number;
+  closingDay?: number; // day of month invoice closes (1-31)
+  dueDay?: number; // day of month invoice is due (1-31)
 }
+
 
 export interface Purchase {
   id: string;
@@ -86,10 +89,13 @@ export function useCards() {
 
   const addCard = (c: Omit<CreditCard, "id">) =>
     setCards((p) => [...p, { ...c, id: crypto.randomUUID() }]);
+  const updateCard = (id: string, patch: Partial<Omit<CreditCard, "id">>) =>
+    setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
   const removeCard = (id: string) => {
     setCards((p) => p.filter((c) => c.id !== id));
     setPurchases((p) => p.filter((x) => x.cardId !== id));
   };
+
 
   const addPurchase = (p: Omit<Purchase, "id">) =>
     setPurchases((prev) => [{ ...p, id: crypto.randomUUID() }, ...prev]);
@@ -103,6 +109,7 @@ export function useCards() {
     purchases,
     hydrated,
     addCard,
+    updateCard,
     removeCard,
     addPurchase,
     updatePurchase,
@@ -110,18 +117,32 @@ export function useCards() {
   };
 }
 
+
 export function addMonths(ym: string, delta: number): string {
   const [y, m] = ym.split("-").map(Number);
   const d = new Date(y, m - 1 + delta, 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export function expandInstallments(purchases: Purchase[]): Installment[] {
+export function expandInstallments(
+  purchases: Purchase[],
+  cards?: CreditCard[],
+): Installment[] {
+  const cardMap = new Map((cards ?? []).map((c) => [c.id, c] as const));
   const list: Installment[] = [];
   for (const p of purchases) {
     const n = Math.max(1, Math.floor(p.installments));
     const perRaw = p.totalAmount / n;
     const per = Math.round(perRaw * 100) / 100;
+    const card = cardMap.get(p.cardId);
+    // If the card has a closing day set, apply "regime de caixa":
+    // parcelas ficam no mês em que a fatura fecha/vence.
+    // Regra: se o dia da compra > diaFechamento, a 1ª parcela pula 1 mês.
+    let shift = 0;
+    if (card?.closingDay && p.purchaseDate) {
+      const day = Number(p.purchaseDate.split("-")[2]);
+      if (day > card.closingDay) shift = 1;
+    }
     let accum = 0;
     for (let i = 0; i < n; i++) {
       const isLast = i === n - 1;
@@ -134,13 +155,14 @@ export function expandInstallments(purchases: Purchase[]): Installment[] {
         category: p.category,
         index: i + 1,
         total: n,
-        month: addMonths(p.firstMonth, i),
+        month: addMonths(p.firstMonth, i + shift),
         amount,
       });
     }
   }
   return list;
 }
+
 
 export const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

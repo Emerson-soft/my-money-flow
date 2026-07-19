@@ -26,13 +26,13 @@ function currentYm() {
 
 function BudgetPage() {
   const { txs, hydrated: hTx } = useTransactions();
-  const { purchases, hydrated: hCards } = useCards();
+  const { cards, purchases, hydrated: hCards } = useCards();
   const { budget, setPlanned, copyFromMonth, hydrated: hBudget } = useBudget();
   const { expense: expenseCats } = useCategories();
   const [ym, setYm] = useState(currentYm());
   const hydrated = hTx && hCards && hBudget;
 
-  const installments = useMemo(() => expandInstallments(purchases), [purchases]);
+  const installments = useMemo(() => expandInstallments(purchases, cards), [purchases, cards]);
 
   const categories = useMemo(() => {
     const set = new Set<string>(expenseCats);
