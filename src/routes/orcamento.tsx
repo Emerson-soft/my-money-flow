@@ -32,7 +32,7 @@ function BudgetPage() {
   const [ym, setYm] = useState(currentYm());
   const hydrated = hTx && hCards && hBudget;
 
-  const installments = useMemo(() => expandInstallments(purchases), [purchases]);
+  const installments = useMemo(() => expandInstallments(purchases, cards), [purchases, cards]);
 
   const categories = useMemo(() => {
     const set = new Set<string>(expenseCats);
