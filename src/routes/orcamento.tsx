@@ -26,7 +26,7 @@ function currentYm() {
 
 function BudgetPage() {
   const { txs, hydrated: hTx } = useTransactions();
-  const { purchases, hydrated: hCards } = useCards();
+  const { cards, purchases, hydrated: hCards } = useCards();
   const { budget, setPlanned, copyFromMonth, hydrated: hBudget } = useBudget();
   const { expense: expenseCats } = useCategories();
   const [ym, setYm] = useState(currentYm());
