@@ -80,7 +80,7 @@ function Home() {
   const [catsOpen, setCatsOpen] = useState(false);
 
 
-  const installments = useMemo(() => expandInstallments(purchases), [purchases]);
+  const installments = useMemo(() => expandInstallments(purchases, cards), [purchases, cards]);
 
   const months = useMemo(() => {
     const s = new Set<string>();
