@@ -57,6 +57,7 @@ function CartoesPage() {
     purchases,
     hydrated,
     addCard,
+    updateCard,
     removeCard,
     addPurchase,
     updatePurchase,
@@ -67,9 +68,11 @@ function CartoesPage() {
   const [cardOpen, setCardOpen] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
   const [editing, setEditing] = useState<Purchase | null>(null);
+  const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
   const [selectedCard, setSelectedCard] = useState<string>("all");
 
-  const installments = useMemo(() => expandInstallments(purchases), [purchases]);
+  const installments = useMemo(() => expandInstallments(purchases, cards), [purchases, cards]);
+
 
   const currentMonth = useMemo(() => {
     const d = new Date();
