@@ -5,7 +5,10 @@ export interface CreditCard {
   name: string;
   color: string; // hex or css color
   limit?: number;
+  closingDay?: number; // day of month invoice closes (1-31)
+  dueDay?: number; // day of month invoice is due (1-31)
 }
+
 
 export interface Purchase {
   id: string;
