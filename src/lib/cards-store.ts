@@ -89,10 +89,13 @@ export function useCards() {
 
   const addCard = (c: Omit<CreditCard, "id">) =>
     setCards((p) => [...p, { ...c, id: crypto.randomUUID() }]);
+  const updateCard = (id: string, patch: Partial<Omit<CreditCard, "id">>) =>
+    setCards((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
   const removeCard = (id: string) => {
     setCards((p) => p.filter((c) => c.id !== id));
     setPurchases((p) => p.filter((x) => x.cardId !== id));
   };
+
 
   const addPurchase = (p: Omit<Purchase, "id">) =>
     setPurchases((prev) => [{ ...p, id: crypto.randomUUID() }, ...prev]);
