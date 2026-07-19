@@ -353,6 +353,15 @@ function CartoesPage() {
           }}
         />
 
+        <EditCardDialog
+          card={editingCard}
+          onClose={() => setEditingCard(null)}
+          onSave={(patch) => {
+            if (editingCard) updateCard(editingCard.id, patch);
+          }}
+        />
+
+
         {/* Upcoming installments */}
         {upcoming.length > 0 && (
           <section className="mt-6 rounded-2xl border bg-card p-6 shadow-sm">
