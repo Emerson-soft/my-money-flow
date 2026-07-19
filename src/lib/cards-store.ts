@@ -119,12 +119,25 @@ export function addMonths(ym: string, delta: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export function expandInstallments(purchases: Purchase[]): Installment[] {
+export function expandInstallments(
+  purchases: Purchase[],
+  cards?: CreditCard[],
+): Installment[] {
+  const cardMap = new Map((cards ?? []).map((c) => [c.id, c] as const));
   const list: Installment[] = [];
   for (const p of purchases) {
     const n = Math.max(1, Math.floor(p.installments));
     const perRaw = p.totalAmount / n;
     const per = Math.round(perRaw * 100) / 100;
+    const card = cardMap.get(p.cardId);
+    // If the card has a closing day set, apply "regime de caixa":
+    // parcelas ficam no mês em que a fatura fecha/vence.
+    // Regra: se o dia da compra > diaFechamento, a 1ª parcela pula 1 mês.
+    let shift = 0;
+    if (card?.closingDay && p.purchaseDate) {
+      const day = Number(p.purchaseDate.split("-")[2]);
+      if (day > card.closingDay) shift = 1;
+    }
     let accum = 0;
     for (let i = 0; i < n; i++) {
       const isLast = i === n - 1;
@@ -137,13 +150,14 @@ export function expandInstallments(purchases: Purchase[]): Installment[] {
         category: p.category,
         index: i + 1,
         total: n,
-        month: addMonths(p.firstMonth, i),
+        month: addMonths(p.firstMonth, i + shift),
         amount,
       });
     }
   }
   return list;
 }
+
 
 export const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
