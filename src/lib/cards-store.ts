@@ -109,12 +109,14 @@ export function useCards() {
     purchases,
     hydrated,
     addCard,
+    updateCard,
     removeCard,
     addPurchase,
     updatePurchase,
     removePurchase,
   };
 }
+
 
 export function addMonths(ym: string, delta: number): string {
   const [y, m] = ym.split("-").map(Number);
