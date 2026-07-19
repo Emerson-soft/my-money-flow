@@ -177,14 +177,30 @@ function CartoesPage() {
                       <div>
                         <p className="text-xs opacity-80">Cartão</p>
                         <p className="text-lg font-semibold">{c.name}</p>
+                        {(c.closingDay || c.dueDay) && (
+                          <p className="mt-0.5 text-[11px] opacity-80">
+                            {c.closingDay ? `Fecha dia ${c.closingDay}` : ""}
+                            {c.closingDay && c.dueDay ? " · " : ""}
+                            {c.dueDay ? `Vence dia ${c.dueDay}` : ""}
+                          </p>
+                        )}
                       </div>
-                      <button
-                        onClick={() => removeCard(c.id)}
-                        className="rounded-lg p-1.5 opacity-80 transition hover:bg-white/15 hover:opacity-100"
-                        aria-label="Remover cartão"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setEditingCard(c)}
+                          className="rounded-lg p-1.5 opacity-80 transition hover:bg-white/15 hover:opacity-100"
+                          aria-label="Editar cartão"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => removeCard(c.id)}
+                          className="rounded-lg p-1.5 opacity-80 transition hover:bg-white/15 hover:opacity-100"
+                          aria-label="Remover cartão"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                     <div className="mt-6 flex items-end justify-between">
                       <div>
@@ -198,6 +214,7 @@ function CartoesPage() {
                         </div>
                       ) : null}
                     </div>
+
                   </div>
                 );
               })}
