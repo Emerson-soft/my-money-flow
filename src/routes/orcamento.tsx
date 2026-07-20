@@ -13,7 +13,10 @@ export const Route = createFileRoute("/orcamento")({
   head: () => ({
     meta: [
       { title: "Orçamento — Finança" },
-      { name: "description", content: "Planeje o valor de cada categoria por mês e acompanhe o quanto já foi gasto." },
+      {
+        name: "description",
+        content: "Planeje o valor de cada categoria por mês e acompanhe o quanto já foi gasto.",
+      },
     ],
   }),
   component: BudgetPage,
@@ -32,7 +35,12 @@ function BudgetPage() {
   const [ym, setYm] = useState(currentYm());
   const hydrated = hTx && hCards && hBudget;
 
-  const installments = useMemo(() => expandInstallments(purchases, cards), [purchases, cards]);
+  const purchasesWihtoutCard = useMemo(() => purchases.filter((item) => !item.cardId), [purchases]);
+
+  const installments = useMemo(
+    () => expandInstallments(purchasesWihtoutCard, []),
+    [purchasesWihtoutCard],
+  );
 
   const categories = useMemo(() => {
     const set = new Set<string>(expenseCats);
@@ -134,7 +142,8 @@ function BudgetPage() {
                 const planned = monthBudget[cat] ?? 0;
                 const used = usedByCat[cat] ?? 0;
                 const remaining = planned - used;
-                const pct = planned > 0 ? Math.min(100, (used / planned) * 100) : used > 0 ? 100 : 0;
+                const pct =
+                  planned > 0 ? Math.min(100, (used / planned) * 100) : used > 0 ? 100 : 0;
                 const over = planned > 0 && used > planned;
                 return (
                   <li key={cat} className="grid grid-cols-12 items-center gap-2 px-4 py-3">
@@ -159,9 +168,7 @@ function BudgetPage() {
                         className="ml-auto h-8 w-32 text-right"
                       />
                     </div>
-                    <div className="col-span-2 text-right text-sm tabular-nums">
-                      {brl(used)}
-                    </div>
+                    <div className="col-span-2 text-right text-sm tabular-nums">{brl(used)}</div>
                     <div
                       className={`col-span-3 text-right text-sm font-medium tabular-nums ${
                         remaining < 0 ? "text-destructive" : "text-foreground"
@@ -202,11 +209,7 @@ function SummaryCard({
   tone: "good" | "bad" | "neutral";
 }) {
   const color =
-    tone === "good"
-      ? "text-emerald-600"
-      : tone === "bad"
-      ? "text-destructive"
-      : "text-foreground";
+    tone === "good" ? "text-emerald-600" : tone === "bad" ? "text-destructive" : "text-foreground";
   return (
     <div className="rounded-xl border bg-card p-4 shadow-sm">
       <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
