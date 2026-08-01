@@ -8,6 +8,8 @@ import {
   CalendarDays,
   Layers,
   Pencil,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   Bar,
