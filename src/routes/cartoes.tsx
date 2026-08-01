@@ -243,11 +243,11 @@ function CartoesPage() {
         <section className="mb-6 grid gap-4 lg:grid-cols-3">
           <div className="rounded-2xl border bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Fatura deste mês</span>
+              <span className="text-sm text-muted-foreground">Fatura do mês</span>
               <Wallet className="h-4 w-4 text-muted-foreground" />
             </div>
             <p className="mt-2 text-2xl font-bold tabular-nums">{brl(currentMonthTotal)}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{monthLabel(currentMonth)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{monthLabel(viewMonth)}</p>
           </div>
           <div className="rounded-2xl border bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between">
