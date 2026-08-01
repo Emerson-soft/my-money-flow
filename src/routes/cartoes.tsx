@@ -147,7 +147,13 @@ function CartoesPage() {
               <p className="text-xs text-muted-foreground">Compras parceladas por mês</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <MonthNav
+              value={viewMonth}
+              onChange={setViewMonth}
+              onReset={() => setViewMonth(currentMonth)}
+              isCurrent={viewMonth === currentMonth}
+            />
             <NewCardDialog open={cardOpen} setOpen={setCardOpen} onAdd={addCard} />
             <NewPurchaseDialog
               open={buyOpen}
