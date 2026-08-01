@@ -73,13 +73,13 @@ function CartoesPage() {
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
   const [selectedCard, setSelectedCard] = useState<string>("all");
 
-  const installments = useMemo(() => expandInstallments(purchases, cards), [purchases, cards]);
-
-
   const currentMonth = useMemo(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   }, []);
+  const [viewMonth, setViewMonth] = useState<string>(currentMonth);
+
+  const installments = useMemo(() => expandInstallments(purchases, cards), [purchases, cards]);
 
   const filteredInst = useMemo(
     () => (selectedCard === "all" ? installments : installments.filter((i) => i.cardId === selectedCard)),
@@ -102,27 +102,36 @@ function CartoesPage() {
   const cardTotals = useMemo(() => {
     const map = new Map<string, number>();
     installments
-      .filter((i) => i.month >= currentMonth)
+      .filter((i) => i.month === viewMonth)
       .forEach((i) => map.set(i.cardId, (map.get(i.cardId) ?? 0) + i.amount));
     return map;
-  }, [installments, currentMonth]);
+  }, [installments, viewMonth]);
+
+  // Parcelas do mês selecionado (respeita filtro de cartão)
+  const monthInst = useMemo(
+    () =>
+      filteredInst
+        .filter((i) => i.month === viewMonth)
+        .sort((a, b) => (a.description || a.category).localeCompare(b.description || b.category)),
+    [filteredInst, viewMonth],
+  );
 
   const upcoming = useMemo(
     () =>
       filteredInst
-        .filter((i) => i.month >= currentMonth)
+        .filter((i) => i.month > viewMonth)
         .sort((a, b) => a.month.localeCompare(b.month))
         .slice(0, 40),
-    [filteredInst, currentMonth],
+    [filteredInst, viewMonth],
   );
 
   const totalFuture = useMemo(
-    () => filteredInst.filter((i) => i.month >= currentMonth).reduce((s, i) => s + i.amount, 0),
-    [filteredInst, currentMonth],
+    () => filteredInst.filter((i) => i.month >= viewMonth).reduce((s, i) => s + i.amount, 0),
+    [filteredInst, viewMonth],
   );
   const currentMonthTotal = useMemo(
-    () => filteredInst.filter((i) => i.month === currentMonth).reduce((s, i) => s + i.amount, 0),
-    [filteredInst, currentMonth],
+    () => monthInst.reduce((s, i) => s + i.amount, 0),
+    [monthInst],
   );
 
   return (
