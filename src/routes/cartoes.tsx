@@ -420,6 +420,56 @@ function CartoesPage() {
   );
 }
 
+function MonthNav({
+  value,
+  onChange,
+  onReset,
+  isCurrent,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onReset: () => void;
+  isCurrent: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-1 rounded-xl border bg-card p-1">
+      <button
+        type="button"
+        onClick={() => onChange(addMonths(value, -1))}
+        className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        aria-label="Mês anterior"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={onReset}
+        className="min-w-[92px] rounded-lg px-2 py-1 text-sm font-medium capitalize transition hover:bg-muted"
+        title="Voltar para o mês atual"
+      >
+        {shortMonth(value)}
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(addMonths(value, 1))}
+        className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        aria-label="Próximo mês"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+      {!isCurrent && (
+        <button
+          type="button"
+          onClick={onReset}
+          className="rounded-lg px-2 py-1 text-xs text-primary transition hover:bg-muted"
+        >
+          Hoje
+        </button>
+      )}
+    </div>
+  );
+}
+
 function shortMonth(ym: string) {
   const [y, m] = ym.split("-").map(Number);
   return new Date(y, m - 1)
