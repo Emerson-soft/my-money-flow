@@ -304,25 +304,28 @@ function CartoesPage() {
           </div>
         </section>
 
-        {/* Purchases list */}
+        {/* Purchases list (do mês selecionado) */}
         <section className="rounded-2xl border bg-card p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">Compras</h2>
+            <div>
+              <h2 className="font-semibold">Compras</h2>
+              <p className="text-xs text-muted-foreground capitalize">{monthLabel(viewMonth)}</p>
+            </div>
             <span className="text-xs text-muted-foreground">
-              {purchases.length} {purchases.length === 1 ? "compra" : "compras"}
+              {monthInst.length} {monthInst.length === 1 ? "lançamento" : "lançamentos"}
             </span>
           </div>
-          {!hydrated ? null : purchases.length === 0 ? (
+          {!hydrated ? null : monthInst.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Nenhuma compra registrada.
+              Nenhuma compra neste mês.
             </p>
           ) : (
             <ul className="divide-y">
-              {purchases.map((p) => {
-                const card = cards.find((c) => c.id === p.cardId);
-                const per = p.totalAmount / Math.max(1, p.installments);
+              {monthInst.map((i, idx) => {
+                const card = cards.find((c) => c.id === i.cardId);
+                const p = purchases.find((x) => x.id === i.purchaseId);
                 return (
-                  <li key={p.id} className="flex items-center gap-4 py-3">
+                  <li key={`${i.purchaseId}-${idx}`} className="flex items-center gap-4 py-3">
                     <span
                       className="flex h-10 w-10 items-center justify-center rounded-xl text-white"
                       style={{ background: card?.color ?? "var(--muted)" }}
@@ -331,22 +334,26 @@ function CartoesPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">
-                        {p.description || p.category}
+                        {i.description || i.category}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {card?.name ?? "—"} · {p.category} · {p.installments}x de {brl(per)} · início {monthLabel(p.firstMonth)}
+                        {card?.name ?? "—"} · {i.category}
+                        {i.total > 1 ? ` · parcela ${i.index}/${i.total}` : " · à vista"}
+                        {p ? ` · total ${brl(p.totalAmount)}` : ""}
                       </p>
                     </div>
-                    <span className="text-sm font-semibold tabular-nums">{brl(p.totalAmount)}</span>
+                    <span className="text-sm font-semibold tabular-nums">{brl(i.amount)}</span>
                     <button
-                      onClick={() => setEditing(p)}
+                      type="button"
+                      onClick={() => p && setEditing(p)}
                       className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
                       aria-label="Editar"
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => removePurchase(p.id)}
+                      type="button"
+                      onClick={() => removePurchase(i.purchaseId)}
                       className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-destructive"
                       aria-label="Remover"
                     >
