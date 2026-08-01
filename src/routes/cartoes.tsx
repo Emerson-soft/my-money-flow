@@ -495,13 +495,15 @@ function shade(hex: string, percent: number) {
 export function NavTabs({
   current,
 }: {
-  current: "dashboard" | "cartoes" | "orcamento";
+  current: "dashboard" | "cartoes" | "orcamento" | "investimentos";
 }) {
   const tabs = [
     { id: "dashboard" as const, to: "/" as const, label: "Dashboard" },
     { id: "cartoes" as const, to: "/cartoes" as const, label: "Cartões" },
     { id: "orcamento" as const, to: "/orcamento" as const, label: "Orçamento" },
+    { id: "investimentos" as const, to: "/investimentos" as const, label: "Investimentos" },
   ];
+
   return (
     <div className="mb-6 inline-flex rounded-xl border bg-card p-1 shadow-sm">
       {tabs.map((t) => (
