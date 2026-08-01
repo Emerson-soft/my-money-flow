@@ -8,6 +8,8 @@ import {
   CalendarDays,
   Layers,
   Pencil,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   Bar,
@@ -71,13 +73,13 @@ function CartoesPage() {
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
   const [selectedCard, setSelectedCard] = useState<string>("all");
 
-  const installments = useMemo(() => expandInstallments(purchases, cards), [purchases, cards]);
-
-
   const currentMonth = useMemo(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   }, []);
+  const [viewMonth, setViewMonth] = useState<string>(currentMonth);
+
+  const installments = useMemo(() => expandInstallments(purchases, cards), [purchases, cards]);
 
   const filteredInst = useMemo(
     () => (selectedCard === "all" ? installments : installments.filter((i) => i.cardId === selectedCard)),
@@ -100,27 +102,36 @@ function CartoesPage() {
   const cardTotals = useMemo(() => {
     const map = new Map<string, number>();
     installments
-      .filter((i) => i.month >= currentMonth)
+      .filter((i) => i.month === viewMonth)
       .forEach((i) => map.set(i.cardId, (map.get(i.cardId) ?? 0) + i.amount));
     return map;
-  }, [installments, currentMonth]);
+  }, [installments, viewMonth]);
+
+  // Parcelas do mês selecionado (respeita filtro de cartão)
+  const monthInst = useMemo(
+    () =>
+      filteredInst
+        .filter((i) => i.month === viewMonth)
+        .sort((a, b) => (a.description || a.category).localeCompare(b.description || b.category)),
+    [filteredInst, viewMonth],
+  );
 
   const upcoming = useMemo(
     () =>
       filteredInst
-        .filter((i) => i.month >= currentMonth)
+        .filter((i) => i.month > viewMonth)
         .sort((a, b) => a.month.localeCompare(b.month))
         .slice(0, 40),
-    [filteredInst, currentMonth],
+    [filteredInst, viewMonth],
   );
 
   const totalFuture = useMemo(
-    () => filteredInst.filter((i) => i.month >= currentMonth).reduce((s, i) => s + i.amount, 0),
-    [filteredInst, currentMonth],
+    () => filteredInst.filter((i) => i.month >= viewMonth).reduce((s, i) => s + i.amount, 0),
+    [filteredInst, viewMonth],
   );
   const currentMonthTotal = useMemo(
-    () => filteredInst.filter((i) => i.month === currentMonth).reduce((s, i) => s + i.amount, 0),
-    [filteredInst, currentMonth],
+    () => monthInst.reduce((s, i) => s + i.amount, 0),
+    [monthInst],
   );
 
   return (
@@ -136,7 +147,13 @@ function CartoesPage() {
               <p className="text-xs text-muted-foreground">Compras parceladas por mês</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <MonthNav
+              value={viewMonth}
+              onChange={setViewMonth}
+              onReset={() => setViewMonth(currentMonth)}
+              isCurrent={viewMonth === currentMonth}
+            />
             <NewCardDialog open={cardOpen} setOpen={setCardOpen} onAdd={addCard} />
             <NewPurchaseDialog
               open={buyOpen}
@@ -226,11 +243,11 @@ function CartoesPage() {
         <section className="mb-6 grid gap-4 lg:grid-cols-3">
           <div className="rounded-2xl border bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Fatura deste mês</span>
+              <span className="text-sm text-muted-foreground">Fatura do mês</span>
               <Wallet className="h-4 w-4 text-muted-foreground" />
             </div>
             <p className="mt-2 text-2xl font-bold tabular-nums">{brl(currentMonthTotal)}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{monthLabel(currentMonth)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{monthLabel(viewMonth)}</p>
           </div>
           <div className="rounded-2xl border bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between">
@@ -287,25 +304,28 @@ function CartoesPage() {
           </div>
         </section>
 
-        {/* Purchases list */}
+        {/* Purchases list (do mês selecionado) */}
         <section className="rounded-2xl border bg-card p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">Compras</h2>
+            <div>
+              <h2 className="font-semibold">Compras</h2>
+              <p className="text-xs text-muted-foreground capitalize">{monthLabel(viewMonth)}</p>
+            </div>
             <span className="text-xs text-muted-foreground">
-              {purchases.length} {purchases.length === 1 ? "compra" : "compras"}
+              {monthInst.length} {monthInst.length === 1 ? "lançamento" : "lançamentos"}
             </span>
           </div>
-          {!hydrated ? null : purchases.length === 0 ? (
+          {!hydrated ? null : monthInst.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Nenhuma compra registrada.
+              Nenhuma compra neste mês.
             </p>
           ) : (
             <ul className="divide-y">
-              {purchases.map((p) => {
-                const card = cards.find((c) => c.id === p.cardId);
-                const per = p.totalAmount / Math.max(1, p.installments);
+              {monthInst.map((i, idx) => {
+                const card = cards.find((c) => c.id === i.cardId);
+                const p = purchases.find((x) => x.id === i.purchaseId);
                 return (
-                  <li key={p.id} className="flex items-center gap-4 py-3">
+                  <li key={`${i.purchaseId}-${idx}`} className="flex items-center gap-4 py-3">
                     <span
                       className="flex h-10 w-10 items-center justify-center rounded-xl text-white"
                       style={{ background: card?.color ?? "var(--muted)" }}
@@ -314,22 +334,26 @@ function CartoesPage() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">
-                        {p.description || p.category}
+                        {i.description || i.category}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {card?.name ?? "—"} · {p.category} · {p.installments}x de {brl(per)} · início {monthLabel(p.firstMonth)}
+                        {card?.name ?? "—"} · {i.category}
+                        {i.total > 1 ? ` · parcela ${i.index}/${i.total}` : " · à vista"}
+                        {p ? ` · total ${brl(p.totalAmount)}` : ""}
                       </p>
                     </div>
-                    <span className="text-sm font-semibold tabular-nums">{brl(p.totalAmount)}</span>
+                    <span className="text-sm font-semibold tabular-nums">{brl(i.amount)}</span>
                     <button
-                      onClick={() => setEditing(p)}
+                      type="button"
+                      onClick={() => p && setEditing(p)}
                       className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
                       aria-label="Editar"
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => removePurchase(p.id)}
+                      type="button"
+                      onClick={() => removePurchase(i.purchaseId)}
                       className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-destructive"
                       aria-label="Remover"
                     >
@@ -392,6 +416,56 @@ function CartoesPage() {
           </section>
         )}
       </div>
+    </div>
+  );
+}
+
+function MonthNav({
+  value,
+  onChange,
+  onReset,
+  isCurrent,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onReset: () => void;
+  isCurrent: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-1 rounded-xl border bg-card p-1">
+      <button
+        type="button"
+        onClick={() => onChange(addMonths(value, -1))}
+        className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        aria-label="Mês anterior"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={onReset}
+        className="min-w-[92px] rounded-lg px-2 py-1 text-sm font-medium capitalize transition hover:bg-muted"
+        title="Voltar para o mês atual"
+      >
+        {shortMonth(value)}
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(addMonths(value, 1))}
+        className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+        aria-label="Próximo mês"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+      {!isCurrent && (
+        <button
+          type="button"
+          onClick={onReset}
+          className="rounded-lg px-2 py-1 text-xs text-primary transition hover:bg-muted"
+        >
+          Hoje
+        </button>
+      )}
     </div>
   );
 }
