@@ -735,6 +735,20 @@ function TxDialog({
           </div>
         </div>
 
+        <div className="flex items-start justify-between gap-3 rounded-xl border bg-muted/30 p-3">
+          <div className="space-y-0.5">
+            <Label htmlFor="inWeekday" className="text-sm">
+              Contar no gráfico por dia da semana
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Desmarque para lançamentos que não representam um gasto do dia (ex.: fatura, ajustes).
+            </p>
+          </div>
+          <Switch id="inWeekday" checked={inWeekday} onCheckedChange={setInWeekday} />
+        </div>
+
+
+
         <Button type="submit" className="w-full" size="lg">
           {isEdit ? "Salvar" : "Adicionar"}
         </Button>
