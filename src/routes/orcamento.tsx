@@ -35,12 +35,8 @@ function BudgetPage() {
   const [ym, setYm] = useState(currentYm());
   const hydrated = hTx && hCards && hBudget;
 
-  const purchasesWihtoutCard = useMemo(() => purchases.filter((item) => !item.cardId), [purchases]);
+  const installments = useMemo(() => expandInstallments(purchases, cards), [purchases, cards]);
 
-  const installments = useMemo(
-    () => expandInstallments(purchasesWihtoutCard, []),
-    [purchasesWihtoutCard],
-  );
 
   const categories = useMemo(() => {
     const set = new Set<string>(expenseCats);
