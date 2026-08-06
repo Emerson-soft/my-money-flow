@@ -41,7 +41,7 @@ function BudgetPage() {
   const categories = useMemo(() => {
     const set = new Set<string>(expenseCats);
     txs.forEach((t) => t.type === "expense" && set.add(t.category));
-    installments.forEach((i) => set.add(i.category));
+    installments.forEach((i) => i.inBudget && set.add(i.category));
     Object.values(budget).forEach((m) => Object.keys(m).forEach((c) => set.add(c)));
     return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
   }, [expenseCats, txs, installments, budget]);
@@ -56,6 +56,7 @@ function BudgetPage() {
       map[t.category] = (map[t.category] ?? 0) + t.amount;
     });
     installments.forEach((i) => {
+      if (!i.inBudget) return;
       if (i.month !== ym) return;
       map[i.category] = (map[i.category] ?? 0) + i.amount;
     });

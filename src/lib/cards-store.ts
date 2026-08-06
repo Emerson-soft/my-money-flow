@@ -19,6 +19,7 @@ export interface Purchase {
   installments: number; // >=1
   firstMonth: string; // "YYYY-MM"
   purchaseDate?: string; // "YYYY-MM-DD" optional day of purchase
+  inBudget?: boolean; // conta no Orçamento mensal (default: false)
 }
 
 export interface Installment {
@@ -30,6 +31,7 @@ export interface Installment {
   total: number;
   month: string; // YYYY-MM
   amount: number;
+  inBudget?: boolean;
 }
 
 const CARDS_KEY = "finance-cards-v1";
@@ -157,6 +159,7 @@ export function expandInstallments(
         total: n,
         month: addMonths(p.firstMonth, i + shift),
         amount,
+        inBudget: p.inBudget ?? false,
       });
     }
   }
