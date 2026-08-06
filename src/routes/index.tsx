@@ -634,6 +634,7 @@ function TxDialog({
       setCategory(initial.category);
       setDescription(initial.description);
       setDate(new Date(initial.date).toISOString().slice(0, 10));
+      setInWeekday(initial.inWeekday ?? true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialId]);
@@ -650,7 +651,9 @@ function TxDialog({
       category,
       description: description.trim(),
       date: new Date(date + "T12:00:00").toISOString(),
+      inWeekday,
     });
+
     if (!isEdit) {
       setAmount("");
       setDescription("");
