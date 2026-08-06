@@ -30,6 +30,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -786,6 +787,7 @@ function NewPurchaseDialog({
     installments: number;
     firstMonth: string;
     purchaseDate?: string;
+    inBudget?: boolean;
   }) => void;
 }) {
   const nowMonth = useMemo(() => {
@@ -799,6 +801,7 @@ function NewPurchaseDialog({
   const [description, setDescription] = useState("");
   const [firstMonth, setFirstMonth] = useState(nowMonth);
   const [purchaseDate, setPurchaseDate] = useState("");
+  const [inBudget, setInBudget] = useState(false);
 
   useEffect(() => {
     if (!category && categories[0]) setCategory(categories[0]);
@@ -819,11 +822,13 @@ function NewPurchaseDialog({
       installments: nParcel,
       firstMonth,
       purchaseDate: purchaseDate || undefined,
+      inBudget,
     });
     setAmount("");
     setDescription("");
     setInstallments("1");
     setPurchaseDate("");
+    setInBudget(false);
     setOpen(false);
   };
 
@@ -950,6 +955,16 @@ function NewPurchaseDialog({
             </p>
           </div>
 
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div className="pr-4">
+              <Label htmlFor="pbudget">Entrar no orçamento</Label>
+              <p className="text-xs text-muted-foreground">
+                Se marcado, as parcelas contam no Orçamento mensal.
+              </p>
+            </div>
+            <Switch id="pbudget" checked={inBudget} onCheckedChange={setInBudget} />
+          </div>
+
           <Button type="submit" className="w-full" size="lg">
             Adicionar compra
           </Button>
@@ -979,6 +994,7 @@ function EditPurchaseDialog({
   const [description, setDescription] = useState("");
   const [firstMonth, setFirstMonth] = useState("");
   const [purchaseDate, setPurchaseDate] = useState("");
+  const [inBudget, setInBudget] = useState(false);
 
   useEffect(() => {
     if (purchase) {
@@ -989,6 +1005,7 @@ function EditPurchaseDialog({
       setDescription(purchase.description);
       setFirstMonth(purchase.firstMonth);
       setPurchaseDate(purchase.purchaseDate ?? "");
+      setInBudget(purchase.inBudget ?? false);
     }
   }, [purchase]);
 
@@ -1007,6 +1024,7 @@ function EditPurchaseDialog({
       installments: nParcel,
       firstMonth,
       purchaseDate: purchaseDate || undefined,
+      inBudget,
     });
   };
 
@@ -1115,6 +1133,16 @@ function EditPurchaseDialog({
             <p className="text-xs text-muted-foreground">
               Usado no gráfico de gastos por dia da semana.
             </p>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div className="pr-4">
+              <Label htmlFor="ebudget">Entrar no orçamento</Label>
+              <p className="text-xs text-muted-foreground">
+                Se marcado, as parcelas contam no Orçamento mensal.
+              </p>
+            </div>
+            <Switch id="ebudget" checked={inBudget} onCheckedChange={setInBudget} />
           </div>
 
           <Button type="submit" className="w-full" size="lg">
