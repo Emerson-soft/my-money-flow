@@ -617,11 +617,13 @@ function TxDialog({
     initial?.category ?? expenseCats[0] ?? "",
   );
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [inWeekday, setInWeekday] = useState(initial?.inWeekday ?? true);
   const [date, setDate] = useState(() =>
     initial
       ? new Date(initial.date).toISOString().slice(0, 10)
       : new Date().toISOString().slice(0, 10),
   );
+
 
   // Sync state when initial changes (edit mode)
   const initialId = initial?.id;
