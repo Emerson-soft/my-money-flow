@@ -132,7 +132,8 @@ function Home() {
   const weekdayData = useMemo(() => {
     const map = WEEKDAYS.map((d) => ({ day: d, valor: 0 }));
     filtered
-      .filter((t) => t.type === "expense")
+      .filter((t) => t.type === "expense" && (t.inWeekday ?? true))
+
       .forEach((t) => {
         const idx = new Date(t.date).getDay();
         map[idx].valor += t.amount;
