@@ -589,7 +589,9 @@ type TxSubmit = {
   category: string;
   description: string;
   date: string;
+  inWeekday: boolean;
 };
+
 
 function TxDialog({
   open,
