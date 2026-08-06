@@ -9,6 +9,9 @@ export interface Transaction {
   category: string;
   description: string;
   date: string; // ISO
+  /** inclui no gráfico de gastos por dia da semana (default: true) */
+  inWeekday?: boolean;
+
 }
 
 const KEY = "finance-tx-v1";

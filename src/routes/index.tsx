@@ -47,6 +47,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   brl,
@@ -130,7 +132,8 @@ function Home() {
   const weekdayData = useMemo(() => {
     const map = WEEKDAYS.map((d) => ({ day: d, valor: 0 }));
     filtered
-      .filter((t) => t.type === "expense")
+      .filter((t) => t.type === "expense" && (t.inWeekday ?? true))
+
       .forEach((t) => {
         const idx = new Date(t.date).getDay();
         map[idx].valor += t.amount;
@@ -589,7 +592,9 @@ type TxSubmit = {
   category: string;
   description: string;
   date: string;
+  inWeekday: boolean;
 };
+
 
 function TxDialog({
   open,
@@ -615,11 +620,13 @@ function TxDialog({
     initial?.category ?? expenseCats[0] ?? "",
   );
   const [description, setDescription] = useState(initial?.description ?? "");
+  const [inWeekday, setInWeekday] = useState(initial?.inWeekday ?? true);
   const [date, setDate] = useState(() =>
     initial
       ? new Date(initial.date).toISOString().slice(0, 10)
       : new Date().toISOString().slice(0, 10),
   );
+
 
   // Sync state when initial changes (edit mode)
   const initialId = initial?.id;
@@ -630,6 +637,7 @@ function TxDialog({
       setCategory(initial.category);
       setDescription(initial.description);
       setDate(new Date(initial.date).toISOString().slice(0, 10));
+      setInWeekday(initial.inWeekday ?? true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialId]);
@@ -646,7 +654,9 @@ function TxDialog({
       category,
       description: description.trim(),
       date: new Date(date + "T12:00:00").toISOString(),
+      inWeekday,
     });
+
     if (!isEdit) {
       setAmount("");
       setDescription("");
@@ -727,6 +737,20 @@ function TxDialog({
             />
           </div>
         </div>
+
+        <div className="flex items-start justify-between gap-3 rounded-xl border bg-muted/30 p-3">
+          <div className="space-y-0.5">
+            <Label htmlFor="inWeekday" className="text-sm">
+              Contar no gráfico por dia da semana
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              Desmarque para lançamentos que não representam um gasto do dia (ex.: fatura, ajustes).
+            </p>
+          </div>
+          <Switch id="inWeekday" checked={inWeekday} onCheckedChange={setInWeekday} />
+        </div>
+
+
 
         <Button type="submit" className="w-full" size="lg">
           {isEdit ? "Salvar" : "Adicionar"}
