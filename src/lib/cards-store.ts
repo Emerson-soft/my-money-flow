@@ -141,11 +141,15 @@ export function expandInstallments(
     // A fatura que fecha no dia `closingDay` cobre compras até o dia anterior.
     // Ex.: fechamento dia 02 -> compra em 01/08 entra na fatura que fecha 02/08
     // (paga em agosto); compra em 02/08 já entra na fatura de setembro.
-    let shift = 0;
-    if (card?.closingDay && p.purchaseDate) {
-      const day = Number(p.purchaseDate.split("-")[2]);
-      if (day >= card.closingDay) shift = 1;
+    // Quando há dia da compra, ele é a base: a fatura de referência é o mês da
+    // compra (ou o seguinte, se a compra ocorreu a partir do dia de fechamento).
+    let base = p.firstMonth;
+    if (p.purchaseDate) {
+      const [py, pm, pd] = p.purchaseDate.split("-").map(Number);
+      base = `${py}-${String(pm).padStart(2, "0")}`;
+      if (card?.closingDay && pd >= card.closingDay) base = addMonths(base, 1);
     }
+
     let accum = 0;
     for (let i = 0; i < n; i++) {
       const isLast = i === n - 1;
@@ -158,7 +162,7 @@ export function expandInstallments(
         category: p.category,
         index: i + 1,
         total: n,
-        month: addMonths(p.firstMonth, i + shift),
+        month: addMonths(base, i),
         amount,
         inBudget: p.inBudget ?? false,
       });
