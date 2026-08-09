@@ -162,7 +162,7 @@ export function expandInstallments(
         category: p.category,
         index: i + 1,
         total: n,
-        month: addMonths(p.firstMonth, i + shift),
+        month: addMonths(base, i),
         amount,
         inBudget: p.inBudget ?? false,
       });
