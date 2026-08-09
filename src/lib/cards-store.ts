@@ -137,13 +137,14 @@ export function expandInstallments(
     const perRaw = p.totalAmount / n;
     const per = Math.round(perRaw * 100) / 100;
     const card = cardMap.get(p.cardId);
-    // If the card has a closing day set, apply "regime de caixa":
-    // parcelas ficam no mês em que a fatura fecha/vence.
-    // Regra: se o dia da compra > diaFechamento, a 1ª parcela pula 1 mês.
+    // Regime de caixa: a parcela cai no mês em que a fatura é paga.
+    // A fatura que fecha no dia `closingDay` cobre compras até o dia anterior.
+    // Ex.: fechamento dia 02 -> compra em 01/08 entra na fatura que fecha 02/08
+    // (paga em agosto); compra em 02/08 já entra na fatura de setembro.
     let shift = 0;
     if (card?.closingDay && p.purchaseDate) {
       const day = Number(p.purchaseDate.split("-")[2]);
-      if (day > card.closingDay) shift = 1;
+      if (day >= card.closingDay) shift = 1;
     }
     let accum = 0;
     for (let i = 0; i < n; i++) {
