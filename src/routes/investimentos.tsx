@@ -587,7 +587,7 @@ function QuotesPanel({
     <section className="mt-6 overflow-hidden rounded-2xl border bg-card shadow-sm">
       <div className="flex items-center justify-between border-b px-4 py-3">
         <h2 className="text-sm font-semibold">Cotações (somente acompanhamento)</h2>
-        <Button type="button" size="sm" variant="ghost" onClick={() => void load()}>
+        <Button type="button" size="sm" variant="ghost" onClick={reload}>
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
         </Button>
       </div>
