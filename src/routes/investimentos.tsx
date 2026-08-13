@@ -493,7 +493,7 @@ function AssetDialog({
 
 type Quote = { symbol: string; price: number; change?: number };
 
-function QuotesPanel({ assets }: { assets: Asset[] }) {
+function useQuotes(assets: Asset[]) {
   const symbols = useMemo(
     () => Array.from(new Set(assets.map((a) => a.ticker).filter(Boolean) as string[])),
     [assets],
@@ -559,7 +559,29 @@ function QuotesPanel({ assets }: { assets: Asset[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbols.join(",")]);
 
+  const prices = useMemo(
+    () => Object.fromEntries(quotes.map((q) => [q.symbol, q.price])) as Record<string, number>,
+    [quotes],
+  );
+
+  return { symbols, quotes, prices, loading, error, reload: () => void load() };
+}
+
+function QuotesPanel({
+  symbols,
+  quotes,
+  loading,
+  error,
+  reload,
+}: {
+  symbols: string[];
+  quotes: Quote[];
+  loading: boolean;
+  error: string | null;
+  reload: () => void;
+}) {
   if (symbols.length === 0) return null;
+
 
   return (
     <section className="mt-6 overflow-hidden rounded-2xl border bg-card shadow-sm">
