@@ -413,6 +413,8 @@ function AssetDialog({
   const [category, setCategory] = useState<InvCategory>(INV_CATEGORIES[0]);
   const [invested, setInvested] = useState("");
   const [ticker, setTicker] = useState("");
+  const [byQty, setByQty] = useState(false);
+  const [quantity, setQuantity] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -420,16 +422,20 @@ function AssetDialog({
     setCategory(initial?.category ?? INV_CATEGORIES[0]);
     setInvested(initial ? String(initial.invested) : "");
     setTicker(initial?.ticker ?? "");
+    setByQty(Boolean(initial?.quantity));
+    setQuantity(initial?.quantity ? String(initial.quantity) : "");
   }, [open, initial]);
 
   const submit = () => {
     const value = Number(invested.replace(",", ".")) || 0;
+    const qty = Number(quantity.replace(",", ".")) || 0;
     if (!name.trim()) return;
     onSave({
       name: name.trim(),
       category,
       invested: value,
       ticker: ticker.trim() ? ticker.trim().toUpperCase() : undefined,
+      quantity: byQty && qty > 0 ? qty : undefined,
     });
     setOpen(false);
   };
