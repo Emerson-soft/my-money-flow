@@ -22,8 +22,16 @@ export interface Asset {
   id: string;
   name: string;
   category: InvCategory;
-  invested: number; // valor já investido
+  invested: number; // valor já investido (usado como fallback quando não há cotação)
   ticker?: string; // opcional, para acompanhar preço
+  quantity?: number; // quando definido, o valor = cotação x quantidade
+}
+
+/** Valor atual do ativo: cotação x quantidade quando disponível, senão o valor informado. */
+export function assetValue(asset: Asset, prices?: Record<string, number>): number {
+  const price = asset.ticker ? prices?.[asset.ticker] : undefined;
+  if (asset.quantity && price) return Math.round(asset.quantity * price * 100) / 100;
+  return asset.invested;
 }
 
 export type TargetMap = Partial<Record<InvCategory, number>>; // % do total
