@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { brl } from "@/lib/finance-store";
 import {
+  assetValue,
   INV_CATEGORIES,
   INV_CATEGORY_COLORS,
   type Asset,
@@ -277,6 +278,7 @@ function InvestmentsPage() {
                 <AssetRow
                   key={a.id}
                   asset={a}
+                  price={a.ticker ? prices[a.ticker] : undefined}
                   onContribute={(v) => contribute(a.id, v)}
                   onUpdate={(p) => updateAsset(a.id, p)}
                   onRemove={() => removeAsset(a.id)}
@@ -286,7 +288,7 @@ function InvestmentsPage() {
           )}
         </section>
 
-        <QuotesPanel assets={assets} />
+        <QuotesPanel {...quotesState} />
       </div>
     </main>
   );
@@ -314,11 +316,13 @@ function StatCard({
 
 function AssetRow({
   asset,
+  price,
   onContribute,
   onUpdate,
   onRemove,
 }: {
   asset: Asset;
+  price?: number;
   onContribute: (v: number) => void;
   onUpdate: (patch: Partial<Omit<Asset, "id">>) => void;
   onRemove: () => void;
@@ -342,7 +346,15 @@ function AssetRow({
         </p>
         <p className="text-xs text-muted-foreground">{asset.category}</p>
       </div>
-      <span className="text-sm font-semibold tabular-nums">{brl(asset.invested)}</span>
+      <div className="text-right">
+        <span className="text-sm font-semibold tabular-nums">{brl(assetValue(asset, price && asset.ticker ? { [asset.ticker]: price } : undefined))}</span>
+        {asset.quantity ? (
+          <p className="text-xs text-muted-foreground tabular-nums">
+            {asset.quantity.toLocaleString("pt-BR", { maximumFractionDigits: 8 })} x{" "}
+            {price ? brl(price) : "sem cotação"}
+          </p>
+        ) : null}
+      </div>
       <div className="flex items-center gap-1">
         <Input
           inputMode="decimal"
