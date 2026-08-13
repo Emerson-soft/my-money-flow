@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { brl } from "@/lib/finance-store";
 import {
+  assetValue,
   INV_CATEGORIES,
   INV_CATEGORY_COLORS,
   type Asset,
@@ -65,16 +66,21 @@ function InvestmentsPage() {
   } = useInvestments();
   const [open, setOpen] = useState(false);
   const [contribution, setContribution] = useState("");
+  const quotesState = useQuotes(assets);
+  const prices = quotesState.prices;
 
   const byCat = useMemo(() => {
     const map: Record<string, number> = {};
     assets.forEach((a) => {
-      map[a.category] = (map[a.category] ?? 0) + a.invested;
+      map[a.category] = (map[a.category] ?? 0) + assetValue(a, prices);
     });
     return map;
-  }, [assets]);
+  }, [assets, prices]);
 
-  const total = useMemo(() => assets.reduce((s, a) => s + a.invested, 0), [assets]);
+  const total = useMemo(
+    () => assets.reduce((s, a) => s + assetValue(a, prices), 0),
+    [assets, prices],
+  );
   const contributionValue = Number(contribution.replace(",", ".")) || 0;
   const suggestion = useMemo(
     () => suggestAllocation(byCat, targets, contributionValue),
@@ -272,6 +278,7 @@ function InvestmentsPage() {
                 <AssetRow
                   key={a.id}
                   asset={a}
+                  price={a.ticker ? prices[a.ticker] : undefined}
                   onContribute={(v) => contribute(a.id, v)}
                   onUpdate={(p) => updateAsset(a.id, p)}
                   onRemove={() => removeAsset(a.id)}
@@ -281,7 +288,7 @@ function InvestmentsPage() {
           )}
         </section>
 
-        <QuotesPanel assets={assets} />
+        <QuotesPanel {...quotesState} />
       </div>
     </main>
   );
@@ -309,11 +316,13 @@ function StatCard({
 
 function AssetRow({
   asset,
+  price,
   onContribute,
   onUpdate,
   onRemove,
 }: {
   asset: Asset;
+  price?: number;
   onContribute: (v: number) => void;
   onUpdate: (patch: Partial<Omit<Asset, "id">>) => void;
   onRemove: () => void;
@@ -337,7 +346,15 @@ function AssetRow({
         </p>
         <p className="text-xs text-muted-foreground">{asset.category}</p>
       </div>
-      <span className="text-sm font-semibold tabular-nums">{brl(asset.invested)}</span>
+      <div className="text-right">
+        <span className="text-sm font-semibold tabular-nums">{brl(assetValue(asset, price && asset.ticker ? { [asset.ticker]: price } : undefined))}</span>
+        {asset.quantity ? (
+          <p className="text-xs text-muted-foreground tabular-nums">
+            {asset.quantity.toLocaleString("pt-BR", { maximumFractionDigits: 8 })} x{" "}
+            {price ? brl(price) : "sem cotação"}
+          </p>
+        ) : null}
+      </div>
       <div className="flex items-center gap-1">
         <Input
           inputMode="decimal"
@@ -396,6 +413,8 @@ function AssetDialog({
   const [category, setCategory] = useState<InvCategory>(INV_CATEGORIES[0]);
   const [invested, setInvested] = useState("");
   const [ticker, setTicker] = useState("");
+  const [byQty, setByQty] = useState(false);
+  const [quantity, setQuantity] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -403,16 +422,20 @@ function AssetDialog({
     setCategory(initial?.category ?? INV_CATEGORIES[0]);
     setInvested(initial ? String(initial.invested) : "");
     setTicker(initial?.ticker ?? "");
+    setByQty(Boolean(initial?.quantity));
+    setQuantity(initial?.quantity ? String(initial.quantity) : "");
   }, [open, initial]);
 
   const submit = () => {
     const value = Number(invested.replace(",", ".")) || 0;
+    const qty = Number(quantity.replace(",", ".")) || 0;
     if (!name.trim()) return;
     onSave({
       name: name.trim(),
       category,
       invested: value,
       ticker: ticker.trim() ? ticker.trim().toUpperCase() : undefined,
+      quantity: byQty && qty > 0 ? qty : undefined,
     });
     setOpen(false);
   };
@@ -493,7 +516,7 @@ function AssetDialog({
 
 type Quote = { symbol: string; price: number; change?: number };
 
-function QuotesPanel({ assets }: { assets: Asset[] }) {
+function useQuotes(assets: Asset[]) {
   const symbols = useMemo(
     () => Array.from(new Set(assets.map((a) => a.ticker).filter(Boolean) as string[])),
     [assets],
@@ -559,13 +582,35 @@ function QuotesPanel({ assets }: { assets: Asset[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbols.join(",")]);
 
+  const prices = useMemo(
+    () => Object.fromEntries(quotes.map((q) => [q.symbol, q.price])) as Record<string, number>,
+    [quotes],
+  );
+
+  return { symbols, quotes, prices, loading, error, reload: () => void load() };
+}
+
+function QuotesPanel({
+  symbols,
+  quotes,
+  loading,
+  error,
+  reload,
+}: {
+  symbols: string[];
+  quotes: Quote[];
+  loading: boolean;
+  error: string | null;
+  reload: () => void;
+}) {
   if (symbols.length === 0) return null;
+
 
   return (
     <section className="mt-6 overflow-hidden rounded-2xl border bg-card shadow-sm">
       <div className="flex items-center justify-between border-b px-4 py-3">
         <h2 className="text-sm font-semibold">Cotações (somente acompanhamento)</h2>
-        <Button type="button" size="sm" variant="ghost" onClick={() => void load()}>
+        <Button type="button" size="sm" variant="ghost" onClick={reload}>
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
         </Button>
       </div>
