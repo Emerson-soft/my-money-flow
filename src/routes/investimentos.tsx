@@ -65,16 +65,21 @@ function InvestmentsPage() {
   } = useInvestments();
   const [open, setOpen] = useState(false);
   const [contribution, setContribution] = useState("");
+  const quotesState = useQuotes(assets);
+  const prices = quotesState.prices;
 
   const byCat = useMemo(() => {
     const map: Record<string, number> = {};
     assets.forEach((a) => {
-      map[a.category] = (map[a.category] ?? 0) + a.invested;
+      map[a.category] = (map[a.category] ?? 0) + assetValue(a, prices);
     });
     return map;
-  }, [assets]);
+  }, [assets, prices]);
 
-  const total = useMemo(() => assets.reduce((s, a) => s + a.invested, 0), [assets]);
+  const total = useMemo(
+    () => assets.reduce((s, a) => s + assetValue(a, prices), 0),
+    [assets, prices],
+  );
   const contributionValue = Number(contribution.replace(",", ".")) || 0;
   const suggestion = useMemo(
     () => suggestAllocation(byCat, targets, contributionValue),
