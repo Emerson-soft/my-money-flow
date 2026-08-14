@@ -358,7 +358,7 @@ function AssetRow({
       <div className="flex items-center gap-1">
         <Input
           inputMode="decimal"
-          placeholder="aporte"
+          placeholder={asset.quantity ? "+ qtd" : "aporte"}
           value={add}
           onChange={(e) => setAdd(e.target.value)}
           className="h-8 w-24 text-right text-sm"
@@ -370,7 +370,10 @@ function AssetRow({
           className="h-8"
           onClick={() => {
             const v = Number(add.replace(",", ".")) || 0;
-            if (v) onContribute(v);
+            if (v) {
+              if (asset.quantity) onUpdate({ quantity: asset.quantity + v });
+              else onContribute(v);
+            }
             setAdd("");
           }}
         >
