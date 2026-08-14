@@ -484,9 +484,42 @@ function AssetDialog({
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label>Como controlar</Label>
+            <div className="mt-1 flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={byQty ? "outline" : "default"}
+                onClick={() => setByQty(false)}
+              >
+                Por valor
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={byQty ? "default" : "outline"}
+                onClick={() => setByQty(true)}
+              >
+                Por quantidade
+              </Button>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-3">
+            {byQty ? (
+              <div>
+                <Label>Quantidade</Label>
+                <Input
+                  className="mt-1"
+                  inputMode="decimal"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  placeholder="0,0001"
+                />
+              </div>
+            ) : null}
             <div>
-              <Label>Valor investido</Label>
+              <Label>{byQty ? "Valor (fallback)" : "Valor investido"}</Label>
               <Input
                 className="mt-1"
                 inputMode="decimal"
@@ -496,7 +529,7 @@ function AssetDialog({
               />
             </div>
             <div>
-              <Label>Ticker (opcional)</Label>
+              <Label>Ticker {byQty ? "" : "(opcional)"}</Label>
               <Input
                 className="mt-1"
                 value={ticker}
@@ -505,6 +538,11 @@ function AssetDialog({
               />
             </div>
           </div>
+          {byQty ? (
+            <p className="text-xs text-muted-foreground">
+              O valor será quantidade x cotação do ticker. Sem cotação, usamos o valor informado.
+            </p>
+          ) : null}
           <Button type="button" onClick={submit}>
             Salvar
           </Button>
