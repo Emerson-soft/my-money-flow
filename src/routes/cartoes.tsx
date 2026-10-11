@@ -1175,3 +1175,120 @@ function EditPurchaseDialog({
     </Dialog>
   );
 }
+
+function RefundDialog({
+  purchase,
+  defaultMonth,
+  onClose,
+  onSave,
+}: {
+  purchase: Purchase | null;
+  defaultMonth: string;
+  onClose: () => void;
+  onSave: (refunds: Refund[]) => void;
+}) {
+  const [refunds, setRefunds] = useState<Refund[]>([]);
+  const [amount, setAmount] = useState("");
+  const [month, setMonth] = useState(defaultMonth);
+  const [description, setDescription] = useState("");
+
+  useEffect(() => {
+    if (purchase) {
+      setRefunds(purchase.refunds ?? []);
+      setAmount("");
+      setMonth(defaultMonth);
+      setDescription("");
+    }
+  }, [purchase, defaultMonth]);
+
+  const addRefund = () => {
+    const v = Number(amount.replace(",", "."));
+    if (!v || v <= 0 || !month) return;
+    setRefunds((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), amount: v, month, description: description.trim() || undefined },
+    ]);
+    setAmount("");
+    setDescription("");
+  };
+
+  return (
+    <Dialog open={!!purchase} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Reembolso — {purchase?.description || purchase?.category}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <p className="text-xs text-muted-foreground">
+            O valor reembolsado abate da fatura do mês escolhido (aparece como crédito negativo).
+          </p>
+
+          {refunds.length > 0 && (
+            <ul className="divide-y rounded-lg border">
+              {refunds.map((r) => (
+                <li key={r.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+                  <span className="flex-1 truncate">
+                    {r.description || "Reembolso"} · <span className="capitalize">{monthLabel(r.month)}</span>
+                  </span>
+                  <span className="font-semibold tabular-nums text-emerald-600">-{brl(r.amount)}</span>
+                  <button
+                    type="button"
+                    onClick={() => setRefunds((prev) => prev.filter((x) => x.id !== r.id))}
+                    className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-destructive"
+                    aria-label="Remover reembolso"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="rval">Valor</Label>
+              <Input
+                id="rval"
+                inputMode="decimal"
+                placeholder="0,00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="rmonth">Fatura de</Label>
+              <Input
+                id="rmonth"
+                type="month"
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="rdesc">Descrição (opcional)</Label>
+            <Input
+              id="rdesc"
+              placeholder="Ex.: estorno da loja"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <Button type="button" variant="outline" className="w-full" onClick={addRefund}>
+            <Plus className="mr-2 h-4 w-4" /> Adicionar reembolso
+          </Button>
+          <Button type="button" className="w-full" size="lg" onClick={() => onSave(refunds)}>
+            Salvar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+            Salvar alterações
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
