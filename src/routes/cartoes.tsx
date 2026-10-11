@@ -10,6 +10,7 @@ import {
   Pencil,
   ChevronLeft,
   ChevronRight,
+  Undo2,
 } from "lucide-react";
 import {
   Bar,
@@ -47,6 +48,7 @@ import {
   useCards,
   type CreditCard,
   type Purchase,
+  type Refund,
 } from "@/lib/cards-store";
 import { useCategories } from "@/lib/categories-store";
 
