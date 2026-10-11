@@ -74,6 +74,7 @@ function CartoesPage() {
   const [buyOpen, setBuyOpen] = useState(false);
   const [editing, setEditing] = useState<Purchase | null>(null);
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
+  const [refunding, setRefunding] = useState<Purchase | null>(null);
   const [selectedCard, setSelectedCard] = useState<string>("all");
 
   const currentMonth = useMemo(() => {
