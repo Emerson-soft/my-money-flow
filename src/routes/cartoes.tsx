@@ -1285,10 +1285,3 @@ function RefundDialog({
     </Dialog>
   );
 }
-            Salvar alterações
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
