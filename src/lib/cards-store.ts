@@ -10,6 +10,13 @@ export interface CreditCard {
 }
 
 
+export interface Refund {
+  id: string;
+  amount: number; // valor devolvido (positivo; abate da fatura)
+  month: string; // "YYYY-MM" mês da fatura em que o reembolso cai
+  description?: string;
+}
+
 export interface Purchase {
   id: string;
   cardId: string;
@@ -20,6 +27,7 @@ export interface Purchase {
   firstMonth: string; // "YYYY-MM"
   purchaseDate?: string; // "YYYY-MM-DD" optional day of purchase
   inBudget?: boolean; // conta no Orçamento mensal (default: false)
+  refunds?: Refund[]; // reembolsos/estornos que abatem da fatura
 }
 
 export interface Installment {
@@ -166,6 +174,29 @@ export function expandInstallments(
         amount,
         inBudget: p.inBudget ?? false,
       });
+    }
+
+    // Reembolsos: abatem da parcela do mesmo mês; se não houver parcela
+    // naquele mês, criam um lançamento negativo (crédito na fatura).
+    for (const r of p.refunds ?? []) {
+      const existing = list.find(
+        (x) => x.purchaseId === p.id && x.month === r.month && x.amount > 0,
+      );
+      if (existing) {
+        existing.amount = Math.round((existing.amount - r.amount) * 100) / 100;
+      } else {
+        list.push({
+          purchaseId: p.id,
+          cardId: p.cardId,
+          description: r.description || `Reembolso: ${p.description}`,
+          category: p.category,
+          index: 0,
+          total: 0,
+          month: r.month,
+          amount: -Math.abs(r.amount),
+          inBudget: p.inBudget ?? false,
+        });
+      }
     }
   }
   return list;
