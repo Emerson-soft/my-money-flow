@@ -398,6 +398,16 @@ function CartoesPage() {
           }}
         />
 
+        <RefundDialog
+          purchase={refunding}
+          defaultMonth={viewMonth}
+          onClose={() => setRefunding(null)}
+          onSave={(refunds) => {
+            if (refunding) updatePurchase(refunding.id, { refunds });
+            setRefunding(null);
+          }}
+        />
+
 
         {/* Upcoming installments */}
         {upcoming.length > 0 && (
