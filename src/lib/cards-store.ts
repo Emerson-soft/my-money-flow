@@ -10,6 +10,13 @@ export interface CreditCard {
 }
 
 
+export interface Refund {
+  id: string;
+  amount: number; // valor devolvido (positivo; abate da fatura)
+  month: string; // "YYYY-MM" mês da fatura em que o reembolso cai
+  description?: string;
+}
+
 export interface Purchase {
   id: string;
   cardId: string;
@@ -20,6 +27,7 @@ export interface Purchase {
   firstMonth: string; // "YYYY-MM"
   purchaseDate?: string; // "YYYY-MM-DD" optional day of purchase
   inBudget?: boolean; // conta no Orçamento mensal (default: false)
+  refunds?: Refund[]; // reembolsos/estornos que abatem da fatura
 }
 
 export interface Installment {
