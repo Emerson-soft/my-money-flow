@@ -349,6 +349,15 @@ function CartoesPage() {
                     <span className="text-sm font-semibold tabular-nums">{brl(i.amount)}</span>
                     <button
                       type="button"
+                      onClick={() => p && setRefunding(p)}
+                      className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                      aria-label="Reembolso"
+                      title="Adicionar reembolso/estorno"
+                    >
+                      <Undo2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => p && setEditing(p)}
                       className="rounded-lg p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground"
                       aria-label="Editar"
