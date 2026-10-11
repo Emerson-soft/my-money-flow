@@ -175,6 +175,29 @@ export function expandInstallments(
         inBudget: p.inBudget ?? false,
       });
     }
+
+    // Reembolsos: abatem da parcela do mesmo mês; se não houver parcela
+    // naquele mês, criam um lançamento negativo (crédito na fatura).
+    for (const r of p.refunds ?? []) {
+      const existing = list.find(
+        (x) => x.purchaseId === p.id && x.month === r.month && x.amount > 0,
+      );
+      if (existing) {
+        existing.amount = Math.round((existing.amount - r.amount) * 100) / 100;
+      } else {
+        list.push({
+          purchaseId: p.id,
+          cardId: p.cardId,
+          description: r.description || `Reembolso: ${p.description}`,
+          category: p.category,
+          index: 0,
+          total: 0,
+          month: r.month,
+          amount: -Math.abs(r.amount),
+          inBudget: p.inBudget ?? false,
+        });
+      }
+    }
   }
   return list;
 }
