@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { DataBackup } from "@/components/DataBackup";
 import { useEffect, useMemo, useState } from "react";
 import {
   CreditCard as CreditCardIcon,
