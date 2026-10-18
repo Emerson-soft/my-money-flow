@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { DataBackup } from "@/components/DataBackup";
 import { useEffect, useMemo, useState } from "react";
 import {
   CreditCard as CreditCardIcon,
@@ -528,7 +529,8 @@ export function NavTabs({
   ];
 
   return (
-    <div className="mb-6 inline-flex rounded-xl border bg-card p-1 shadow-sm">
+    <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div className="inline-flex rounded-xl border bg-card p-1 shadow-sm">
       {tabs.map((t) => (
         <Link
           key={t.id}
@@ -542,6 +544,8 @@ export function NavTabs({
           {t.label}
         </Link>
       ))}
+    </div>
+    <DataBackup />
     </div>
   );
 }
